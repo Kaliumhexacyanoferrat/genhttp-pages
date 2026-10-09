@@ -200,7 +200,7 @@ The editor key never appears in a log line or an error, and is masked.
 ## Developing
 
 ```bash
-node --test test/                                   # unit tests
+node --test 'test/*.test.mjs'                            # unit tests
 node test/e2e.mjs https://pages-test.genhttp.run/ site   # checks a published fixture
 node tools/check.mjs <key> lambda.cs=lambda/lambda.cs pages/PagesSite.cs=lambda/PagesSite.cs
 ```
