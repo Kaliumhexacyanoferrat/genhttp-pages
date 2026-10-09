@@ -104,7 +104,8 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; }
 h1 {
   font-size: clamp(2.25rem, 6vw, 4.25rem);
   font-weight: 800;
-  max-width: 16ch;
+  max-width: 20ch;
+  text-wrap: balance;
   margin: 2rem 0 1.25rem;
 }
 

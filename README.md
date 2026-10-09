@@ -1,8 +1,8 @@
 # GenHTTP Pages
 
-Publish your GitHub Pages site to [GenHTTP Lambda](https://genhttp.dev/) instead.
-A drop-in replacement for `actions/deploy-pages`: keep your workflow and change
-the step that deploys. No secret, no account.
+GitHub Pages, with stats, logs and a server. A drop-in replacement for
+`actions/deploy-pages`: keep your workflow and change the step that deploys. No
+secret, no account. The site is hosted on [GenHTTP Lambda](https://genhttp.dev/).
 
 ```diff
      steps:
