@@ -106,3 +106,25 @@ jobs:
         run: |
           echo "::error::Deploying without a key should fail."
           exit 1
+
+  published:
+    name: The published v1, as other repositories use it
+    needs: path
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency: e2e
+    steps:
+      - uses: actions/checkout@v7
+      - id: pages
+        uses: Kaliumhexacyanoferrat/genhttp-pages/configure@v1
+        with:
+          key: ${{ secrets.GENHTTP_TEST_KEY }}
+      - id: deployment
+        uses: Kaliumhexacyanoferrat/genhttp-pages@v1
+        with:
+          key: ${{ secrets.GENHTTP_TEST_KEY }}
+          path: test/fixtures/site
+          include_hidden_files: true
+      - run: |
+          test "${{ steps.pages.outputs.base_url }}/" = "${{ steps.deployment.outputs.page_url }}"
+          node test/e2e.mjs "${{ steps.deployment.outputs.page_url }}" site
