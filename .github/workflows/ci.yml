@@ -92,19 +92,54 @@ jobs:
           include_hidden_files: true
       - run: node test/e2e.mjs "${{ steps.again.outputs.page_url }}" site
 
-  missing-key:
-    name: Without a key, it says what to do
+  activation:
+    name: Deploy without a secret, by the run's OIDC token
+    needs: path
     runs-on: ubuntu-latest
+    concurrency: e2e
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
+      - id: pages
+        uses: ./configure
+        with:
+          activation: gp-hpn43-nt8jr-a9h33-cef7z
       - id: deployment
+        uses: ./
+        with:
+          activation: gp-hpn43-nt8jr-a9h33-cef7z
+          path: test/fixtures/site
+          include_hidden_files: true
+      - run: |
+          test "${{ steps.pages.outputs.base_url }}/" = "${{ steps.deployment.outputs.page_url }}"
+          node test/e2e.mjs "${{ steps.deployment.outputs.page_url }}" site
+
+  missing-key:
+    name: Without a key or activation, it says what to do
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - id: nothing
+        uses: ./
+        continue-on-error: true
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_URL: ''
+        with:
+          path: test/fixtures/site
+      - id: unknown
         uses: ./
         continue-on-error: true
         with:
           path: test/fixtures/site
-      - if: steps.deployment.outcome != 'failure'
+          activation: gp-aaaaa-aaaaa-aaaaa-aaaaa
+      - if: steps.nothing.outcome != 'failure' || steps.unknown.outcome != 'failure'
         run: |
-          echo "::error::Deploying without a key should fail."
+          echo "::error::Deploying without a key, or with an unknown activation code, should fail."
           exit 1
 
   published:

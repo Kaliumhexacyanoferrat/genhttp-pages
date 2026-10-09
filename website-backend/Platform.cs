@@ -61,8 +61,25 @@ public static class Platform
 
         var privateKey = Text(created, "privateKey");
 
-        return new CreatedLambda(Text(created, "publicKey"), privateKey, Text(created, "address"), Server + "/editor/" + privateKey);
+        return new CreatedLambda(Text(created, "publicKey"), privateKey, Text(created, "address"), EditorOf(privateKey));
     }
+
+    /// <summary>The lambda an editor key opens - which proves the key is somebody's.</summary>
+    public static async Task<CreatedLambda> ReadAsync(string privateKey)
+    {
+        using var response = await Client.GetAsync("lambdas/" + Uri.EscapeDataString(privateKey));
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new ProviderException(ResponseStatus.BadRequest, "That editor key does not open a lambda.");
+        }
+
+        var lambda = await Read(response);
+
+        return new CreatedLambda(Text(lambda, "publicKey"), privateKey, Text(lambda, "address"), EditorOf(privateKey));
+    }
+
+    public static string EditorOf(string privateKey) => Server + "/editor/" + privateKey;
 
     private static string Text(JsonElement json, string name)
         => json.TryGetProperty(name, out var value) ? value.GetString() : null;

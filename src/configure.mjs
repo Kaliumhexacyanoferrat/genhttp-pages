@@ -2,26 +2,28 @@
 
 import * as gha from './gha.mjs';
 import { LambdaApi } from './api.mjs';
-
-const ASSISTANT = 'https://pages.genhttp.run/';
+import { resolveKey, KeyMissing, BROKER } from './credentials.mjs';
 
 async function main() {
-  const key = gha.input('key') || process.env.GENHTTP_KEY || '';
+  let key;
 
-  if (!key) {
-    gha.error(`GenHTTP Pages needs the editor key of a lambda to know its address. Create one at ${ASSISTANT} and pass it with 'key: \${{ secrets.GENHTTP_KEY }}'.`);
-    process.exitCode = 1;
-    return;
+  try {
+    ({ key } = await resolveKey());
+  } catch (error) {
+    if (error instanceof KeyMissing) {
+      gha.error(error.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw error;
   }
-
-  gha.mask(key);
 
   const api = new LambdaApi({ server: gha.input('server', 'https://genhttp.dev'), key, timeout: 60000 });
 
   const lambda = await api.getLambda();
 
   if (!lambda) {
-    throw new Error(`The editor key does not open a lambda. Check the secret (GENHTTP_KEY), or create a lambda at ${ASSISTANT}.`);
+    throw new Error(`The editor key does not open a lambda. Check the secret (GENHTTP_KEY), or activate the repository again at ${BROKER}/#setup.`);
   }
 
   const address = new URL(lambda.address);

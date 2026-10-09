@@ -7,8 +7,12 @@ branding:
   color: 'blue'
 
 inputs:
+  activation:
+    description: 'The activation code the assistant at https://pages.genhttp.run/ gave for this repository. Needed for the first run; after that, a run of the repository is recognised by its GitHub OIDC token (permissions: id-token: write). With several sites in one repository, keep each code to say which lambda it goes to.'
+    required: false
+    default: ''
   key:
-    description: 'The editor key of the lambda to publish to - pass it from a secret, such as secrets.GENHTTP_KEY. Left out, the GENHTTP_KEY environment variable is read.'
+    description: 'The editor key of the lambda to publish to, from a secret such as secrets.GENHTTP_KEY - instead of an activation. Left out, the GENHTTP_KEY environment variable is read.'
     required: false
     default: ''
 
@@ -73,6 +77,10 @@ inputs:
     description: 'The GenHTTP Lambda installation to publish to.'
     required: false
     default: 'https://genhttp.dev'
+  broker:
+    description: 'Where activations are kept and OIDC tokens exchanged for the key.'
+    required: false
+    default: 'https://pages.genhttp.run'
 
 outputs:
   page_url:
@@ -180,6 +188,8 @@ runs:
         GENHTTP_PAGES_MODE: ${{ steps.mode.outputs.mode }}
         GENHTTP_PAGES_SOURCE: ${{ steps.branch.outputs.source || steps.mode.outputs.source }}
         INPUT_KEY: ${{ inputs.key }}
+        INPUT_ACTIVATION: ${{ inputs.activation }}
+        INPUT_BROKER: ${{ inputs.broker }}
         INPUT_TIMEOUT: ${{ inputs.timeout }}
         INPUT_ARTIFACT_NAME: ${{ inputs.artifact_name }}
         INPUT_PREVIEW: ${{ inputs.preview }}

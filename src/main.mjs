@@ -15,6 +15,7 @@ import * as gha from './gha.mjs';
 import { LambdaApi, ApiError } from './api.mjs';
 import { collect, build, basePaths, MANIFEST } from './site.mjs';
 import { zip } from './zip.mjs';
+import { resolveKey, KeyMissing } from './credentials.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ACTION = join(HERE, '..');
@@ -24,15 +25,20 @@ const ASSISTANT = 'https://pages.genhttp.run/';
 const env = process.env;
 
 async function main() {
-  const key = gha.input('key') || env.GENHTTP_KEY || '';
   const server = gha.input('server', 'https://genhttp.dev');
 
-  if (!key) {
-    missingKey();
-    return;
-  }
+  let key;
+  let via;
 
-  gha.mask(key);
+  try {
+    ({ key, via } = await resolveKey());
+  } catch (error) {
+    if (error instanceof KeyMissing) {
+      missingKey(error.message);
+      return;
+    }
+    throw error;
+  }
 
   const api = new LambdaApi({
     server,
@@ -44,7 +50,9 @@ async function main() {
   const lambda = await api.getLambda();
 
   if (!lambda) {
-    throw new Error(`The editor key does not open a lambda on ${server}. Check the secret (GENHTTP_KEY), or create a lambda at ${ASSISTANT}.`);
+    throw new Error(via === 'oidc'
+      ? `The lambda this repository was activated for is gone - free lambdas nobody uses are removed. Activate the repository again at ${ASSISTANT}#setup.`
+      : `The editor key does not open a lambda on ${server}. Check the secret (GENHTTP_KEY), or activate the repository at ${ASSISTANT}#setup.`);
   }
 
   if (lambda.tier === 'Demo') {
@@ -221,6 +229,12 @@ function backendFiles() {
   for (const file of found) {
     if (file.path === 'lambda.cs') {
       entry = { name: 'lambda.cs', data: file.data };
+    } else if (file.path.startsWith('resources/')) {
+      // what the backend reads while it runs, its migrations among them
+      if (/^resources\/(site\/|blobs\/|pages\.json$)/.test(file.path)) {
+        throw new Error(`The backend may not bring '${file.path}': resources/site/, resources/blobs/ and resources/pages.json are the site's.`);
+      }
+      files.push({ name: file.path, data: file.data });
     } else {
       files.push({ name: 'backend/' + file.path, data: file.data });
     }
@@ -354,28 +368,24 @@ function previewName() {
   return `preview-${branch}`;
 }
 
-function missingKey() {
-  const repository = env.GITHUB_REPOSITORY;
-  const secrets = repository ? `${env.GITHUB_SERVER_URL ?? 'https://github.com'}/${repository}/settings/secrets/actions/new` : 'the settings of the repository';
-
-  gha.error(`GenHTTP Pages needs the editor key of a lambda to publish to. Create one at ${ASSISTANT}, store it as the secret GENHTTP_KEY (${secrets}) and pass it with 'key: \${{ secrets.GENHTTP_KEY }}'.`);
+function missingKey(reason) {
+  gha.error(reason);
 
   gha.summary([
-    '### 🔑 GenHTTP Pages needs a key',
+    '### 🔑 GenHTTP Pages does not know where to publish',
     '',
-    'The site is ready, but there is no lambda to publish it to yet.',
+    reason,
     '',
-    `1. Create a lambda at **[${ASSISTANT}](${ASSISTANT})** — one click, no account.`,
-    `2. Store its editor key as the repository secret \`GENHTTP_KEY\`: [${secrets}](${secrets})`,
-    '3. Hand it to this step:',
+    `1. Activate the repository at **[${ASSISTANT}](${ASSISTANT}#setup)** - one click, no account. You get the link to its editor and an activation code.`,
+    '2. Hand the code to this step once, and keep `id-token: write` in the permissions of the job, as Pages workflows have it:',
     '',
     '```yaml',
     '- uses: Kaliumhexacyanoferrat/genhttp-pages@v1',
     '  with:',
-    '    key: ${{ secrets.GENHTTP_KEY }}',
+    '    activation: gp-xxxxx-xxxxx-xxxxx-xxxxx',
     '```',
     '',
-    '4. Run the workflow again.'
+    '3. Run the workflow again.'
   ].join('\n') + '\n');
 
   process.exitCode = 1;

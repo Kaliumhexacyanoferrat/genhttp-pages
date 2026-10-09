@@ -3,6 +3,10 @@
 # Pages - which is all a site has to change. It publishes website/, with the
 # C# of its setup assistant beside it, to https://pages.genhttp.run/.
 #
+# No secret: the repository was activated at https://pages.genhttp.run/, and
+# the run is recognised by its OIDC token (id-token: write, as Pages has it).
+# The activation code was used once and is bound to this repository since.
+#
 # It uses the action from this commit (./), so the documentation is also the
 # last test of every change.
 name: Deploy static content to Pages
@@ -40,7 +44,7 @@ jobs:
       - name: Setup Pages
         uses: ./configure
         with:
-          key: ${{ secrets.GENHTTP_KEY }}
+          activation: gp-jqc9b-wwuuf-ym49f-6qbdf
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
@@ -49,5 +53,5 @@ jobs:
         id: deployment
         uses: ./
         with:
-          key: ${{ secrets.GENHTTP_KEY }}
+          activation: gp-jqc9b-wwuuf-ym49f-6qbdf
           backend: website-backend
