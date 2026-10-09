@@ -295,6 +295,28 @@ label { display: block; font-weight: 600; margin: 1rem 0 0.4rem; }
 .pair { display: flex; flex-wrap: wrap; gap: 0 1rem; max-width: 34rem; }
 .pair > div { flex: 1 1 12rem; }
 
+/* why: the comparison and the editor */
+
+.compare { max-width: 58rem; }
+.compare th[scope="row"] { font-weight: 600; width: 30%; }
+.compare td { width: 35%; color: var(--muted); }
+.compare td.plus { color: var(--ink); font-weight: 500; }
+.compare thead th:last-child { color: var(--action); }
+
+.shot { margin: 1rem 0 2.5rem; max-width: 58rem; }
+.shot picture, .shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.shot picture {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--sheet);
+}
+.shot figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+
 /* the reference */
 
 .table { overflow-x: auto; max-width: 52rem; margin: 0.5rem 0 1rem; }

@@ -18,6 +18,22 @@ creates the lambda that hosts your site, tells you where to put its key, and
 rewrites your workflow. That page is published by this action, from this
 repository ([`docs.yml`](.github/workflows/docs.yml)).
 
+## Why not just GitHub Pages?
+
+The same files, served the same way, plus what a static host cannot do:
+
+- **Code on the server** when the site needs it: a form, an API, a proxy that
+  keeps a key from the browser, a SQLite database, websockets
+  ([`backend`](#a-backend-beside-the-site)).
+- **Traffic statistics** counted on the server - no script, no cookie.
+- **A request log** with what failed, what your code printed and its errors.
+- **Every deployment a version**, one click to put an older one back.
+- **Previews** of pull requests (`preview: true`), and no account.
+
+GitHub is ahead on size (1 GB against 32 MB on the free tier), on free custom
+domains, and on keeping an unvisited site forever - see
+[what is different](#what-is-different-from-github-pages).
+
 ## Getting started
 
 1. **Create a lambda** at [pages.genhttp.run](https://pages.genhttp.run/#setup),

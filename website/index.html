@@ -26,6 +26,7 @@
 <header class="bar">
   <a class="brand" href="./">GenHTTP Pages</a>
   <nav>
+    <a href="#why">Why</a>
     <a href="#setup">Set up</a>
     <a href="#reference">Reference</a>
     <a href="#differences">Differences</a>
@@ -63,6 +64,109 @@
     <a class="button" href="#setup">Set it up</a>
     <a class="quiet" href="#reference">Read the reference</a>
   </p>
+</section>
+
+<section id="why" class="why">
+  <h2>Why not just GitHub Pages?</h2>
+  <p>
+    GitHub Pages serves files. A lambda serves the same files, can run code beside
+    them, and comes with an editor that shows what happens on your site. Where GitHub
+    is ahead, the table says so too.
+  </p>
+
+  <div class="table compare">
+  <table>
+    <thead><tr><th></th><th>GitHub Pages</th><th>GenHTTP Pages</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Static files, Jekyll, your build</th><td>Yes</td><td class="plus">Yes, from the same artifact</td></tr>
+      <tr><th scope="row">Code on the server</th><td>No</td><td class="plus">C# routes beside the site: a form, an API, a proxy that keeps a key from the browser</td></tr>
+      <tr><th scope="row">A database</th><td>No</td><td class="plus">SQLite, one per site</td></tr>
+      <tr><th scope="row">Live updates, multiplayer</th><td>No</td><td class="plus">Websockets and server-sent events</td></tr>
+      <tr><th scope="row">Secrets while it runs</th><td>No, only during the build</td><td class="plus">Read by your code, never shown again</td></tr>
+      <tr><th scope="row">Traffic statistics</th><td>Only with a third-party script</td><td class="plus">Counted on the server: no script, no cookie</td></tr>
+      <tr><th scope="row">Request log and errors</th><td>No</td><td class="plus">Every request, what your code printed, errors with stack traces</td></tr>
+      <tr><th scope="row">Going back</th><td>Run an old workflow again</td><td class="plus">Every deployment is a version, one click to put it back</td></tr>
+      <tr><th scope="row">Previews of pull requests</th><td>Not available to the public</td><td class="plus"><code>preview: true</code></td></tr>
+      <tr><th scope="row">Account</th><td>Your GitHub account</td><td class="plus">None; the key is the access</td></tr>
+      <tr><th scope="row">Your own domain</th><td class="plus">Free</td><td>With the premium tier</td></tr>
+      <tr><th scope="row">Size</th><td class="plus">1 GB</td><td>32 MB on the free tier</td></tr>
+      <tr><th scope="row">How long it stays</th><td class="plus">As long as the repository</td><td>As long as it is used, on the free tier</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Every site gets an editor</h3>
+  <p>
+    The editor key you store in the repository also opens the lambda's editor on
+    genhttp.dev. This is the one of this page:
+  </p>
+  <figure class="shot">
+    <picture>
+      <source srcset="editor/overview-dark.webp" media="(prefers-color-scheme: dark)">
+      <img src="editor/overview-light.webp" width="1280" height="620" loading="lazy"
+           alt="The editor of this page: online with version 4, 56 requests today, none failed, 3.9 ms to answer, and the latest change, Published Kaliumhexacyanoferrat/genhttp-pages@3ec3e37 with GenHTTP Pages.">
+    </picture>
+  </figure>
+
+  <h3>Know your traffic, without a tracking script</h3>
+  <p>
+    Requests per minute and per day, what failed or was not found, how fast the site
+    answered and which pages are read. The server counts them, so there is no script
+    on your pages, no cookie, and nothing for a consent banner.
+  </p>
+  <figure class="shot">
+    <picture>
+      <source srcset="editor/stats-dark.webp" media="(prefers-color-scheme: dark)">
+      <img src="editor/stats-light.webp" width="1010" height="590" loading="lazy"
+           alt="Stats of the last hour: 56 requests, none failed, 3 not found, 3.9 ms on average, and a chart of requests per minute.">
+    </picture>
+  </figure>
+
+  <h3>See every request</h3>
+  <p>
+    A live log of what your site answered, with status, size and time, and once there
+    is code beside the site, what it printed and the errors it threw. The 404s of a
+    broken link show up here before anyone writes to you. Visitor addresses are not
+    recorded.
+  </p>
+  <figure class="shot">
+    <picture>
+      <source srcset="editor/logs-dark.webp" media="(prefers-color-scheme: dark)">
+      <img src="editor/logs-light.webp" width="1010" height="560" loading="lazy"
+           alt="The log of this page: requests for the favicon, the scripts, the stylesheet and the start page, each with status 200 and the time it took.">
+    </picture>
+  </figure>
+
+  <h3>Every push is a version</h3>
+  <p>
+    Each deployment is kept with the commit it came from. Compare any two, or put an
+    older one back online while you fix the build that broke the site.
+  </p>
+  <figure class="shot">
+    <picture>
+      <source srcset="editor/versions-dark.webp" media="(prefers-color-scheme: dark)">
+      <img src="editor/versions-light.webp" width="1010" height="280" loading="lazy"
+           alt="Versions of this page: version 4, Published Kaliumhexacyanoferrat/genhttp-pages@3ec3e37 with GenHTTP Pages, is online; the older ones can be rolled back to.">
+    </picture>
+  </figure>
+
+  <h3>A server, when the site needs one</h3>
+  <p>
+    A contact form, a counter, an API whose key must not reach the browser, comments
+    kept in a database, a page that updates itself: name a folder of C# in
+    <a href="#backend"><code>backend</code></a> and it runs beside the site, on the same
+    address. Records are in a SQLite database you can read in the editor, keys in
+    secrets. The demos show <a href="https://demo-game.genhttp.run/" target="_blank" rel="noopener">a game over websockets</a>
+    and <a href="https://demo-live.genhttp.run/" target="_blank" rel="noopener">a live poll</a>.
+  </p>
+  <figure class="shot">
+    <picture>
+      <source srcset="editor/database-dark.webp" media="(prefers-color-scheme: dark)">
+      <img src="editor/database-light.webp" width="1010" height="560" loading="lazy"
+           alt="The data of a demo app: its SQLite database is on, holds 2 tables, and its tasks table is shown row by row.">
+    </picture>
+    <figcaption>The records of <a href="https://demo-crud.genhttp.run/" target="_blank" rel="noopener">demo-crud</a>, a demo app, in its editor.</figcaption>
+  </figure>
 </section>
 
 <section id="setup" class="setup">
