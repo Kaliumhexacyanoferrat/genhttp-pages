@@ -256,6 +256,8 @@ label { display: block; font-weight: 600; margin: 1rem 0 0.4rem; }
 }
 .key { border: 2px solid var(--action); }
 .key code, .shell code, .output code { background: none; border-radius: 0; }
+/* inline code is padded; a block of it would shift its first line */
+.output code, pre.block code { padding: 0; }
 .key code, .shell code { flex: 1; padding: 0.35rem 0; overflow-wrap: anywhere; }
 .key code { font-size: 1rem; font-weight: 600; }
 
@@ -350,9 +352,121 @@ details.more[open] summary { margin-bottom: 0.5rem; }
 
 .diff span.code-slot { display: inline; padding: 0; position: static; }
 
-.backend .lede { max-width: 44rem; }
-.change-shot { margin: 1.25rem 0 1rem; max-width: min(100%, calc((100svh - 12rem) * 2.065)); }
-.backend .shell { max-width: 44rem; }
+/* a server beside the site: use cases, what to ask, what it takes */
+
+.backend .lede { max-width: 46rem; }
+
+.uses {
+  display: flex;
+  gap: 0.4rem;
+  margin: 1.5rem 0 1rem;
+  flex-wrap: wrap;
+}
+
+/* on a phone, one row to swipe rather than four to scroll past */
+@media (max-width: 40rem) {
+  .uses { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: thin; margin-right: -1rem; padding-right: 1rem; }
+}
+.uses [role="tab"] {
+  flex: none;
+  font: 600 0.95rem/1 var(--text);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+}
+.uses [role="tab"]:hover { color: var(--ink); border-color: var(--ink); }
+.uses [aria-selected="true"] { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+
+.ask {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 52rem) {
+  .ask { grid-template-columns: 1fr; }
+}
+
+.prompt {
+  margin: 0;
+  padding: 1.4rem 1.5rem;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--action);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.prompt figcaption { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem; }
+.prompt blockquote {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+.prompt blockquote::before { content: "\201C"; }
+.prompt blockquote::after { content: "\201D"; }
+.prompt-foot { margin: 1rem 0 0; font-size: 0.95rem; }
+
+.modules {
+  padding: 1.2rem 1.3rem;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+.modules-head { margin: 0 0 0.8rem; font-size: 0.9rem; color: var(--muted); }
+.modules-head a { color: inherit; }
+.modules dl {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.55rem 0.75rem;
+  margin: 0;
+  align-items: baseline;
+}
+.modules dt { font-size: 0.85rem; color: var(--muted); }
+.modules dd { margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.modules dd a {
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-decoration: none;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  transition: background-color 0.18s, color 0.18s, border-color 0.18s;
+}
+.modules dd a:hover { color: var(--ink); border-color: var(--ink); }
+.modules dd a.used { background: var(--action); border-color: var(--action); color: var(--action-ink); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .modules dd a { transition: none; }
+}
+
+@media (max-width: 30rem) {
+  .modules dl { grid-template-columns: 1fr; gap: 0.3rem; }
+  .modules dd { margin-bottom: 0.5rem; }
+}
+
+.ask-after {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+  align-items: start;
+}
+.ask-after .change-shot { margin: 0; }
+.ask-notes p { margin: 0 0 0.75rem; max-width: 30rem; }
+.ask-notes .shell { margin-top: 0.25rem; }
+.ask-notes .shell code { font-size: 0.78rem; }
+
+@media (max-width: 52rem) {
+  .ask-after { grid-template-columns: 1fr; }
+}
 
 /* the reference page */
 

@@ -3,6 +3,7 @@
 // Links are relative, so this works wherever the page is served from.
 
 import { ACTION, activationLine, convert } from './convert.js';
+import { USES } from './uses.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -343,3 +344,32 @@ for (const button of document.querySelectorAll('[data-copy], [data-copy-href]'))
     setTimeout(() => { button.textContent = label; }, 1800);
   });
 }
+
+/* ---------- what a site can have beside it ---------- */
+
+function showUse(id) {
+  const use = USES[id];
+
+  $('ask-prompt').textContent = use.prompt;
+
+  const demo = $('ask-demo');
+
+  if (use.demo) {
+    demo.href = use.demo[0];
+    demo.textContent = use.demo[1];
+    demo.target = use.local ? '' : '_blank';
+    demo.hidden = false;
+  } else {
+    demo.hidden = true;
+  }
+
+  for (const module of document.querySelectorAll('.modules [data-module]')) {
+    module.classList.toggle('used', use.modules.includes(module.dataset.module));
+  }
+
+  $('ask-uses-count').textContent = `, this one uses ${use.modules.length}`;
+}
+
+tabs(document.querySelector('.uses'), (tab) => showUse(tab.dataset.use));
+
+showUse('game');
