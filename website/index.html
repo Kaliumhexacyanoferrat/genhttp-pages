@@ -204,79 +204,71 @@
 <section id="backend" class="backend">
   <h2>Need a server? Ask for it.</h2>
   <p class="lede">
-    Your site runs on a real web server, so it can do what a static host cannot. Say what
-    you want in the editor's Change section: the agent writes it beside your site, tries
-    it in a draft and puts it online. Your next push keeps it.
+    Your site runs on a real web server, so it can have a server part. Ask the editor's
+    agent for it in Change, or your own agent through MCP: it is built beside your pages,
+    which call it with <code>fetch('api/…')</code>. Ask for the server, not for pages:
+    the pages stay in your repository, and a push replaces them and keeps the server.
   </p>
 
-  <div class="uses" role="tablist" aria-label="What people build beside their site">
-    <button type="button" role="tab" aria-selected="true" data-use="game">Multiplayer game</button>
-    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-use="chat">Chat</button>
-    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-use="poll">Live poll</button>
-    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-use="signups">Sign-ups</button>
-    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-use="comments">Comments</button>
-    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-use="members">Members area</button>
-    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-use="uploads">Uploads</button>
-    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-use="proxy">Hidden API key</button>
-  </div>
+  <a id="change-full" class="change-shot" href="editor/change-light.webp" target="_blank" rel="noopener" aria-label="Open the picture in full size">
+    <picture>
+      <source srcset="editor/change-dark.webp" media="(prefers-color-scheme: dark)">
+      <img src="editor/change-light.webp" width="790" height="312" loading="lazy"
+           alt="The Change section of a site's editor: asked for an API that stores the sign-ups of a newsletter form, leaving the site as it is, the agent put it online in 49 seconds.">
+    </picture>
+  </a>
 
-  <div class="ask" role="tabpanel" id="ask-panel">
-    <figure class="prompt">
-      <figcaption>You write in Change</figcaption>
-      <blockquote id="ask-prompt">Add multiplayer to my browser game: players in the same room see each other's moves the moment they make them, and the server checks every move.</blockquote>
-      <p class="prompt-foot" id="ask-foot"><a id="ask-demo" href="https://demo-game.genhttp.run/" target="_blank" rel="noopener">Play a game built like this</a></p>
-    </figure>
-
-    <div class="modules" aria-label="What GenHTTP gives the code beside your site; the ones this needs are marked">
-      <p class="modules-head">Everything <a href="https://genhttp.org/" target="_blank" rel="noopener">GenHTTP</a> does is there<span id="ask-uses-count">, this one uses 3</span></p>
-      <dl>
-        <dt>APIs</dt>
-        <dd>
-          <a data-module="rest" href="https://genhttp.org/documentation/content/frameworks/webservices/" target="_blank" rel="noopener">REST services</a>
-          <a data-module="openapi" href="https://genhttp.org/documentation/content/concerns/open-api/" target="_blank" rel="noopener">Open API</a>
-          <a data-module="controllers" href="https://genhttp.org/documentation/content/frameworks/controllers/" target="_blank" rel="noopener">Controllers</a>
-        </dd>
-        <dt>Real time</dt>
-        <dd>
-          <a data-module="websockets" href="https://genhttp.org/documentation/content/frameworks/websockets/" target="_blank" rel="noopener">Websockets</a>
-          <a data-module="sse" href="https://genhttp.org/documentation/content/handlers/server-sent-events/" target="_blank" rel="noopener">Server-sent events</a>
-        </dd>
-        <dt>Data</dt>
-        <dd>
-          <a data-module="database" href="https://genhttp.dev/docs" target="_blank" rel="noopener">SQLite database</a>
-          <a data-module="files" href="https://genhttp.dev/docs" target="_blank" rel="noopener">File storage</a>
-          <a data-module="secrets" href="https://genhttp.dev/docs" target="_blank" rel="noopener">Secrets</a>
-        </dd>
-        <dt>Security</dt>
-        <dd>
-          <a data-module="auth" href="https://genhttp.org/documentation/content/concerns/authentication/" target="_blank" rel="noopener">Sign-in</a>
-          <a data-module="cors" href="https://genhttp.org/documentation/content/concerns/cors/" target="_blank" rel="noopener">CORS</a>
-        </dd>
-        <dt>Beyond</dt>
-        <dd>
-          <a data-module="http" href="https://genhttp.dev/docs" target="_blank" rel="noopener">Calls to other APIs</a>
-          <a data-module="caching" href="https://genhttp.org/documentation/content/concerns/client-caching-policy/" target="_blank" rel="noopener">Caching</a>
-          <a data-module="i18n" href="https://genhttp.org/documentation/content/concerns/localization/" target="_blank" rel="noopener">Languages</a>
-        </dd>
-      </dl>
+  <div class="modules" aria-label="What GenHTTP gives the server part of your site">
+    <div class="module-group">
+      <h3>APIs</h3>
+      <p>
+        <a href="https://genhttp.org/documentation/content/frameworks/webservices/" target="_blank" rel="noopener">REST services</a>
+        <a href="https://genhttp.org/documentation/content/concerns/open-api/" target="_blank" rel="noopener">Open API</a>
+        <a href="https://genhttp.org/documentation/content/frameworks/controllers/" target="_blank" rel="noopener">Controllers</a>
+      </p>
+      <p class="for">for forms, counters and endpoints of your own</p>
     </div>
-  </div>
-
-  <div class="ask-after">
-    <a id="change-full" class="tour-shot change-shot" href="editor/change-light.webp" target="_blank" rel="noopener" aria-label="Open the picture in full size">
-      <picture>
-        <source srcset="editor/change-dark.webp" media="(prefers-color-scheme: dark)">
-        <img src="editor/change-light.webp" width="1280" height="620" loading="lazy"
-             alt="The Change section of a site's editor: asked to add an API for the sign-ups of a newsletter form, the agent wrote it, tried it and put it online in 49 seconds.">
-      </picture>
-    </a>
-    <div class="ask-notes">
-      <p><strong>What comes back.</strong> The sign-up API, asked for in one sentence: online in 49 seconds, beside a site that stays as GitHub publishes it.</p>
-      <p><strong>Your own agent?</strong> Claude Code, Codex or Cursor change the lambda through MCP with your editor link:</p>
+    <div class="module-group">
+      <h3>Real time</h3>
+      <p>
+        <a href="https://genhttp.org/documentation/content/frameworks/websockets/" target="_blank" rel="noopener">Websockets</a>
+        <a href="https://genhttp.org/documentation/content/handlers/server-sent-events/" target="_blank" rel="noopener">Server-sent events</a>
+      </p>
+      <p class="for">for multiplayer games, chats and live polls</p>
+    </div>
+    <div class="module-group">
+      <h3>Data</h3>
+      <p>
+        <a href="https://genhttp.dev/docs" target="_blank" rel="noopener">SQLite database</a>
+        <a href="https://genhttp.dev/docs" target="_blank" rel="noopener">File storage</a>
+        <a href="https://genhttp.dev/docs" target="_blank" rel="noopener">Secrets</a>
+      </p>
+      <p class="for">for records, uploads and API keys</p>
+    </div>
+    <div class="module-group">
+      <h3>Security</h3>
+      <p>
+        <a href="https://genhttp.org/documentation/content/concerns/authentication/" target="_blank" rel="noopener">Sign-in</a>
+        <a href="https://genhttp.org/documentation/content/concerns/cors/" target="_blank" rel="noopener">CORS</a>
+      </p>
+      <p class="for">for members areas and calls from other sites</p>
+    </div>
+    <div class="module-group">
+      <h3>Beyond</h3>
+      <p>
+        <a href="https://genhttp.dev/docs" target="_blank" rel="noopener">Other APIs</a>
+        <a href="https://genhttp.org/documentation/content/concerns/client-caching-policy/" target="_blank" rel="noopener">Caching</a>
+        <a href="https://genhttp.org/documentation/content/concerns/localization/" target="_blank" rel="noopener">Languages</a>
+      </p>
+      <p class="for">for weather, maps and anything with a key</p>
+    </div>
+    <div class="module-group mcp">
+      <h3>Your own agent</h3>
       <div class="shell">
         <code id="mcp-command">claude mcp add --transport http genhttp https://genhttp.dev/mcp</code>
         <button type="button" class="copy" data-copy="mcp-command">Copy</button>
       </div>
+      <p class="for">then hand it your editor link</p>
     </div>
   </div>
 </section>
