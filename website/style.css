@@ -295,7 +295,7 @@ label { display: block; font-weight: 600; margin: 1rem 0 0.4rem; }
 .pair { display: flex; flex-wrap: wrap; gap: 0 1rem; max-width: 34rem; }
 .pair > div { flex: 1 1 12rem; }
 
-/* why: the comparison and the editor */
+/* the comparison, on the reference */
 
 .compare { max-width: 58rem; }
 .compare th[scope="row"] { font-weight: 600; width: 30%; }
@@ -303,19 +303,57 @@ label { display: block; font-weight: 600; margin: 1rem 0 0.4rem; }
 .compare td.plus { color: var(--ink); font-weight: 500; }
 .compare thead th:last-child { color: var(--action); }
 
-.shot { margin: 1rem 0 2.5rem; max-width: 58rem; }
-.shot picture, .shot img {
-  display: block;
-  width: 100%;
-  height: auto;
+/* the tour: the editor, one screen high */
+
+.tour { padding-top: 2.5rem; }
+.tour h2 { margin-bottom: 0.25rem; }
+
+.tour-panel {
+  /* as wide as fits the screen's height, so tabs, words and picture are seen at once */
+  max-width: min(100%, calc((100svh - 14rem) * 2.065));
 }
-.shot picture {
+
+.tour-say { min-height: 3.2em; margin: 0.6rem 0 0.75rem; color: var(--muted); max-width: 46rem; }
+
+.tour-shot {
+  display: block;
+  aspect-ratio: 1280 / 620;
   border: 1px solid var(--rule);
   border-radius: 10px;
   overflow: hidden;
   background: var(--sheet);
 }
-.shot figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+.tour-shot picture { display: block; height: 100%; }
+.tour-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+
+@media (max-width: 40rem) {
+  .tour-say { min-height: 4.8em; }
+}
+
+/* the assistant */
+
+.optional { font-weight: 400; color: var(--muted); font-size: 0.9em; }
+
+.link {
+  font: inherit; color: var(--action); background: none; border: 0; padding: 0;
+  text-decoration: underline; text-underline-offset: 0.18em; cursor: pointer;
+}
+
+.activated { max-width: 42rem; }
+.editor-line { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 0.5rem 0; }
+.editor-line .copy { padding: 0.75rem 1rem; }
+
+details.more { max-width: 52rem; margin: 0.9rem 0 0; }
+details.more summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+details.more summary:hover { color: var(--action); }
+details.more[open] summary { margin-bottom: 0.5rem; }
+
+.diff span.code-slot { display: inline; padding: 0; position: static; }
+
+/* the reference page */
+
+.doc h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 1.5rem 0 1rem; max-width: none; }
+.doc h2 { margin-top: 2.5rem; }
 
 /* the reference */
 

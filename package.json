@@ -1,6 +1,6 @@
 {
   "name": "genhttp-pages",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "A drop-in replacement for actions/deploy-pages that publishes to GenHTTP Lambda",
   "type": "module",

@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GenHTTP Pages – publish your GitHub Pages site to GenHTTP Lambda</title>
-  <meta name="description" content="A drop-in replacement for actions/deploy-pages. Change one line of your GitHub Actions workflow and your static site is hosted on GenHTTP Lambda, free, with no account.">
+  <meta name="description" content="A drop-in replacement for actions/deploy-pages. Change one step of your GitHub Pages workflow and your site is hosted on GenHTTP Lambda, with traffic statistics, a request log and every deployment kept. No secret, no account.">
   <link rel="canonical" href="https://pages.genhttp.run/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="GenHTTP Pages">
-  <meta property="og:description" content="Change one line of your GitHub Pages workflow and host the site on GenHTTP Lambda.">
+  <meta property="og:description" content="Change one step of your GitHub Pages workflow and host the site on GenHTTP Lambda.">
   <meta property="og:url" content="https://pages.genhttp.run/">
   <meta property="og:image" content="https://pages.genhttp.run/og.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -26,10 +26,8 @@
 <header class="bar">
   <a class="brand" href="./">GenHTTP Pages</a>
   <nav>
-    <a href="#why">Why</a>
-    <a href="#setup">Set up</a>
-    <a href="#reference">Reference</a>
-    <a href="#differences">Differences</a>
+    <a href="#setup">Activate</a>
+    <a href="reference">Reference</a>
     <a href="https://github.com/Kaliumhexacyanoferrat/genhttp-pages">GitHub</a>
   </nav>
 </header>
@@ -39,235 +37,126 @@
 <section class="hero">
   <h1>Your GitHub Pages site, hosted on GenHTTP&nbsp;Lambda.</h1>
   <p class="lede">
-    GenHTTP Pages replaces <code>actions/deploy-pages</code>. Keep your workflow,
-    your build and your artifact. Change the step that deploys, hand it a key, and
-    the next push publishes to <span class="nowrap">your-site.genhttp.run</span>.
+    Change one step of your workflow. Keep your build, get traffic statistics, a
+    request log and every deployment, with no secret and no account.
   </p>
 
   <figure class="diff" aria-label="The change to a GitHub Pages workflow">
     <figcaption>.github/workflows/pages.yml</figcaption>
-<pre><code><span class="ctx">deploy:</span>
-<span class="ctx">  environment:</span>
-<span class="ctx">    name: github-pages</span>
-<span class="ctx">    url: ${{ steps.deployment.outputs.page_url }}</span>
-<span class="ctx">  runs-on: ubuntu-latest</span>
-<span class="ctx">  needs: build</span>
-<span class="ctx">  steps:</span>
-<span class="ctx">    - id: deployment</span>
-<span class="del" aria-label="removed">      uses: actions/deploy-pages@v5</span>
-<span class="add" aria-label="added">      uses: Kaliumhexacyanoferrat/genhttp-pages@v1</span>
-<span class="add" aria-label="added">      with:</span>
-<span class="add" aria-label="added">        key: ${{ secrets.GENHTTP_KEY }}</span></code></pre>
+<pre><code id="hero-diff"><span class="ctx">    steps:</span>
+<span class="ctx">      - id: deployment</span>
+<span class="del" aria-label="removed">        uses: actions/deploy-pages@v5</span>
+<span class="add" aria-label="added">        uses: Kaliumhexacyanoferrat/genhttp-pages@v1</span>
+<span class="add" aria-label="added">        with:</span>
+<span class="add" aria-label="added">          activation: <span class="code-slot">gp-…</span></span></code></pre>
   </figure>
 
   <p class="actions">
-    <a class="button" href="#setup">Set it up</a>
-    <a class="quiet" href="#reference">Read the reference</a>
+    <a class="button" href="#setup">Activate your repository</a>
+    <a class="quiet" href="#tour">See what you get</a>
   </p>
 </section>
 
-<section id="why" class="why">
-  <h2>Why not just GitHub Pages?</h2>
-  <p>
-    GitHub Pages serves files. A lambda serves the same files, can run code beside
-    them, and comes with an editor that shows what happens on your site. Where GitHub
-    is ahead, the table says so too.
-  </p>
+<section id="tour" class="tour">
+  <h2>Every site gets an editor</h2>
 
-  <div class="table compare">
-  <table>
-    <thead><tr><th></th><th>GitHub Pages</th><th>GenHTTP Pages</th></tr></thead>
-    <tbody>
-      <tr><th scope="row">Static files, Jekyll, your build</th><td>Yes</td><td class="plus">Yes, from the same artifact</td></tr>
-      <tr><th scope="row">Code on the server</th><td>No</td><td class="plus">C# routes beside the site: a form, an API, a proxy that keeps a key from the browser</td></tr>
-      <tr><th scope="row">A database</th><td>No</td><td class="plus">SQLite, one per site</td></tr>
-      <tr><th scope="row">Live updates, multiplayer</th><td>No</td><td class="plus">Websockets and server-sent events</td></tr>
-      <tr><th scope="row">Secrets while it runs</th><td>No, only during the build</td><td class="plus">Read by your code, never shown again</td></tr>
-      <tr><th scope="row">Traffic statistics</th><td>Only with a third-party script</td><td class="plus">Counted on the server: no script, no cookie</td></tr>
-      <tr><th scope="row">Request log and errors</th><td>No</td><td class="plus">Every request, what your code printed, errors with stack traces</td></tr>
-      <tr><th scope="row">Going back</th><td>Run an old workflow again</td><td class="plus">Every deployment is a version, one click to put it back</td></tr>
-      <tr><th scope="row">Previews of pull requests</th><td>Not available to the public</td><td class="plus"><code>preview: true</code></td></tr>
-      <tr><th scope="row">Account</th><td>Your GitHub account</td><td class="plus">None; the key is the access</td></tr>
-      <tr><th scope="row">Your own domain</th><td class="plus">Free</td><td>With the premium tier</td></tr>
-      <tr><th scope="row">Size</th><td class="plus">1 GB</td><td>32 MB on the free tier</td></tr>
-      <tr><th scope="row">How long it stays</th><td class="plus">As long as the repository</td><td>As long as it is used, on the free tier</td></tr>
-    </tbody>
-  </table>
+  <div class="tabs" role="tablist" aria-label="The editor of a site">
+    <button type="button" role="tab" id="tour-overview" aria-controls="tour-panel" aria-selected="true" data-shot="overview"
+            data-say="How the site is doing at a glance, and what changed last. This is the editor of this very page.">Overview</button>
+    <button type="button" role="tab" id="tour-stats" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="stats"
+            data-say="Requests, failures, pages not found and answer times, counted on the server: no script, no cookie, no consent banner.">Traffic</button>
+    <button type="button" role="tab" id="tour-logs" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="logs"
+            data-say="Every request, live and searchable - and once there is code beside the site, what it printed and its errors.">Log</button>
+    <button type="button" role="tab" id="tour-versions" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="versions"
+            data-say="Each push is a version with the commit it came from. Put an older one back online in one click.">History</button>
+    <button type="button" role="tab" id="tour-data" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="data"
+            data-say="Need a form, an API or something live? Add C# beside the site, with a database and secrets. Shown: the demo-crud demo.">Backend</button>
   </div>
 
-  <h3>Every site gets an editor</h3>
-  <p>
-    The editor key you store in the repository also opens the lambda's editor on
-    genhttp.dev. This is the one of this page:
-  </p>
-  <figure class="shot">
+  <div id="tour-panel" role="tabpanel" aria-labelledby="tour-overview" class="tour-panel">
+    <p id="tour-say" class="tour-say">How the site is doing at a glance, and what changed last. This is the editor of this very page.</p>
+    <a id="tour-full" class="tour-shot" href="editor/overview-light.webp" target="_blank" rel="noopener" aria-label="Open the picture in full size">
     <picture>
-      <source srcset="editor/overview-dark.webp" media="(prefers-color-scheme: dark)">
-      <img src="editor/overview-light.webp" width="1280" height="620" loading="lazy"
-           alt="The editor of this page: online with version 4, 56 requests today, none failed, 3.9 ms to answer, and the latest change, Published Kaliumhexacyanoferrat/genhttp-pages@3ec3e37 with GenHTTP Pages.">
+      <source id="tour-dark" srcset="editor/overview-dark.webp" media="(prefers-color-scheme: dark)">
+      <img id="tour-img" src="editor/overview-light.webp" width="1280" height="620"
+           alt="The editor of a site: its overview.">
     </picture>
-  </figure>
-
-  <h3>Know your traffic, without a tracking script</h3>
-  <p>
-    Requests per minute and per day, what failed or was not found, how fast the site
-    answered and which pages are read. The server counts them, so there is no script
-    on your pages, no cookie, and nothing for a consent banner.
-  </p>
-  <figure class="shot">
-    <picture>
-      <source srcset="editor/stats-dark.webp" media="(prefers-color-scheme: dark)">
-      <img src="editor/stats-light.webp" width="1010" height="590" loading="lazy"
-           alt="Stats of the last hour: 56 requests, none failed, 3 not found, 3.9 ms on average, and a chart of requests per minute.">
-    </picture>
-  </figure>
-
-  <h3>See every request</h3>
-  <p>
-    A live log of what your site answered, with status, size and time, and once there
-    is code beside the site, what it printed and the errors it threw. The 404s of a
-    broken link show up here before anyone writes to you. Visitor addresses are not
-    recorded.
-  </p>
-  <figure class="shot">
-    <picture>
-      <source srcset="editor/logs-dark.webp" media="(prefers-color-scheme: dark)">
-      <img src="editor/logs-light.webp" width="1010" height="560" loading="lazy"
-           alt="The log of this page: requests for the favicon, the scripts, the stylesheet and the start page, each with status 200 and the time it took.">
-    </picture>
-  </figure>
-
-  <h3>Every push is a version</h3>
-  <p>
-    Each deployment is kept with the commit it came from. Compare any two, or put an
-    older one back online while you fix the build that broke the site.
-  </p>
-  <figure class="shot">
-    <picture>
-      <source srcset="editor/versions-dark.webp" media="(prefers-color-scheme: dark)">
-      <img src="editor/versions-light.webp" width="1010" height="280" loading="lazy"
-           alt="Versions of this page: version 4, Published Kaliumhexacyanoferrat/genhttp-pages@3ec3e37 with GenHTTP Pages, is online; the older ones can be rolled back to.">
-    </picture>
-  </figure>
-
-  <h3>A server, when the site needs one</h3>
-  <p>
-    A contact form, a counter, an API whose key must not reach the browser, comments
-    kept in a database, a page that updates itself: name a folder of C# in
-    <a href="#backend"><code>backend</code></a> and it runs beside the site, on the same
-    address. Records are in a SQLite database you can read in the editor, keys in
-    secrets. The demos show <a href="https://demo-game.genhttp.run/" target="_blank" rel="noopener">a game over websockets</a>
-    and <a href="https://demo-live.genhttp.run/" target="_blank" rel="noopener">a live poll</a>.
-  </p>
-  <figure class="shot">
-    <picture>
-      <source srcset="editor/database-dark.webp" media="(prefers-color-scheme: dark)">
-      <img src="editor/database-light.webp" width="1010" height="560" loading="lazy"
-           alt="The data of a demo app: its SQLite database is on, holds 2 tables, and its tasks table is shown row by row.">
-    </picture>
-    <figcaption>The records of <a href="https://demo-crud.genhttp.run/" target="_blank" rel="noopener">demo-crud</a>, a demo app, in its editor.</figcaption>
-  </figure>
+    </a>
+  </div>
 </section>
 
 <section id="setup" class="setup">
-  <h2>Set it up</h2>
-  <p>Four steps, about two minutes. Nothing here needs an account.</p>
+  <h2>Activate your repository</h2>
 
   <ol class="steps">
-    <li class="step" id="step-create">
-      <h3>Create a lambda for the site</h3>
-      <p>
-        A lambda is what hosts the site. Pick its address, or leave the field
-        empty for a random one. Already have a lambda? Skip to the next step with
-        its editor key.
-      </p>
+    <li class="step" id="step-activate">
+      <h3>Activate it</h3>
 
-      <form id="create" class="create" novalidate>
-        <label for="name">Address</label>
-        <div class="address">
-          <span class="scheme">https://</span>
-          <input id="name" name="name" autocomplete="off" spellcheck="false" autocapitalize="off"
-                 placeholder="my-site" maxlength="40" aria-describedby="name-status">
-          <span class="domain">.genhttp.run</span>
+      <form id="activate" class="activate" novalidate>
+        <label for="repo">Repository</label>
+        <input id="repo" class="field" placeholder="owner/repository" autocomplete="off" spellcheck="false" autocapitalize="off" required>
+
+        <div id="new-lambda">
+          <label for="name">Address <span class="optional">optional</span></label>
+          <div class="address">
+            <span class="scheme">https://</span>
+            <input id="name" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="my-site" maxlength="40" aria-describedby="name-status">
+            <span class="domain">.genhttp.run</span>
+          </div>
+          <p id="name-status" class="status" aria-live="polite"></p>
         </div>
-        <p id="name-status" class="status" aria-live="polite"></p>
+
+        <div id="own-lambda" hidden>
+          <label for="own-key">Editor key of your lambda</label>
+          <input id="own-key" class="field" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="the end of its editor link">
+        </div>
+
+        <p class="small"><button type="button" class="link" id="toggle-own">I have a lambda already</button></p>
 
         <label class="check">
-          <input type="checkbox" id="terms" required>
-          <span>I accept the <a href="https://genhttp.dev/terms" target="_blank" rel="noopener">terms of GenHTTP Lambda</a>: no malware, phishing, attacks or content I have no right to publish.</span>
+          <input type="checkbox" id="terms">
+          <span>I accept the <a href="https://genhttp.dev/terms" target="_blank" rel="noopener">terms of GenHTTP Lambda</a>.</span>
         </label>
 
-        <button type="submit" class="button" id="create-button">Create lambda</button>
-        <p id="create-error" class="error" role="alert" hidden></p>
+        <button type="submit" class="button" id="activate-button">Activate</button>
+        <p id="activate-error" class="error" role="alert" hidden></p>
       </form>
 
-      <div id="created" class="created" hidden>
-        <p>Your site will answer at <a id="created-address" href="#" target="_blank" rel="noopener"></a>.</p>
-        <p class="key-label" id="key-label">Its editor key. Copy it now: it is shown only once, and it is the only way to change the lambda.</p>
-        <div class="key" aria-labelledby="key-label">
-          <code id="created-key"></code>
-          <button type="button" class="copy" data-copy="created-key">Copy</button>
-        </div>
-        <p class="small">
-          The key opens the lambda's <a id="created-editor" href="#" target="_blank" rel="noopener">editor</a>,
-          where you see every deployment, roll one back, read the traffic and change the address.
-          Treat it like a password.
+      <div id="activated" class="activated" hidden>
+        <p class="editor-line">
+          <a id="editor-link" class="button" href="#" target="_blank" rel="noopener">Open your editor</a>
+          <button type="button" class="copy" data-copy-href="editor-link">Copy the link</button>
         </p>
-      </div>
-    </li>
-
-    <li class="step" id="step-secret">
-      <h3>Store the key in your repository</h3>
-      <p>
-        Add a repository secret named <code>GENHTTP_KEY</code> with the editor key as its
-        value. Secrets are never shown in logs, and GitHub Pages is not involved, so
-        the repository does not need Pages enabled.
-      </p>
-
-      <label for="repo">Your repository</label>
-      <input id="repo" class="field" placeholder="owner/repository" autocomplete="off" spellcheck="false" autocapitalize="off">
-      <p class="links">
-        <a id="secret-link" href="https://docs.github.com/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository" target="_blank" rel="noopener">Open the secrets of the repository</a>
-      </p>
-      <p class="small">Or with the GitHub CLI, which asks for the value:</p>
-      <div class="shell">
-        <code id="gh-command">gh secret set GENHTTP_KEY</code>
-        <button type="button" class="copy" data-copy="gh-command">Copy</button>
+        <p class="small">
+          Bookmark it: the link is the only way into the editor, and it is shown once.
+          Your site will answer at <a id="site-link" href="#" target="_blank" rel="noopener"></a>.
+        </p>
       </div>
     </li>
 
     <li class="step" id="step-workflow">
       <h3>Change the workflow</h3>
-      <p>How does your site get published today?</p>
-
-      <div class="tabs" role="tablist" aria-label="How the site is published today">
-        <button type="button" role="tab" id="tab-actions" aria-controls="panel-actions" aria-selected="true">With GitHub Actions</button>
-        <button type="button" role="tab" id="tab-branch" aria-controls="panel-branch" aria-selected="false" tabindex="-1">From a branch</button>
-        <button type="button" role="tab" id="tab-folder" aria-controls="panel-folder" aria-selected="false" tabindex="-1">Not yet</button>
+      <p>Replace the deploy step, as at the top of this page:</p>
+      <div class="output">
+        <pre><code id="step-diff">        uses: Kaliumhexacyanoferrat/genhttp-pages@v1
+        with:
+          activation: gp-…</code></pre>
+        <button type="button" class="copy" data-copy="step-diff">Copy</button>
       </div>
 
-      <div class="panel" role="tabpanel" id="panel-actions" aria-labelledby="tab-actions">
-        <p>
-          Your workflow ends with <code>actions/deploy-pages</code>. Replace that line and add
-          the key, as at the top of this page. Everything else stays: the build, the
-          <code>upload-pages-artifact</code> step, the environment, the permissions.
-        </p>
-        <p>Or paste the workflow here, and get it back changed:</p>
+      <details class="more">
+        <summary>Paste your workflow, get it back changed</summary>
         <label for="workflow-in" class="visually-hidden">Your workflow</label>
-        <textarea id="workflow-in" class="code-input" rows="8" spellcheck="false" placeholder="Paste .github/workflows/….yml"></textarea>
+        <textarea id="workflow-in" class="code-input" rows="7" spellcheck="false" placeholder="Paste .github/workflows/….yml"></textarea>
         <p id="workflow-status" class="status" aria-live="polite"></p>
         <div class="output" id="workflow-out-wrap" hidden>
           <pre><code id="workflow-out"></code></pre>
           <button type="button" class="copy" data-copy="workflow-out">Copy</button>
         </div>
-      </div>
+      </details>
 
-      <div class="panel" role="tabpanel" id="panel-branch" aria-labelledby="tab-branch" hidden>
-        <p>
-          GitHub publishes your branch without a workflow. GenHTTP Pages needs one, which does
-          the same: it checks out the branch, builds it with Jekyll unless it has a
-          <code>.nojekyll</code> file, and publishes it on every push.
-        </p>
+      <details class="more">
+        <summary>My site is published from a branch</summary>
         <div class="pair">
           <div>
             <label for="branch">Branch</label>
@@ -281,180 +170,34 @@
             </select>
           </div>
         </div>
-        <p class="small">Save it as <code>.github/workflows/genhttp-pages.yml</code> on your default branch:</p>
+        <p class="small">Save as <code>.github/workflows/genhttp-pages.yml</code> on the default branch. It builds with Jekyll unless there is a <code>.nojekyll</code>.</p>
         <div class="output">
           <pre><code id="branch-out"></code></pre>
           <button type="button" class="copy" data-copy="branch-out">Copy</button>
         </div>
-      </div>
+      </details>
 
-      <div class="panel" role="tabpanel" id="panel-folder" aria-labelledby="tab-folder" hidden>
-        <p>
-          Publish a folder of your repository as it is: plain HTML, or whatever a build
-          step before it writes.
-        </p>
-        <label for="path">Folder</label>
+      <details class="more">
+        <summary>I have no Pages workflow yet</summary>
+        <label for="path">Folder to publish</label>
         <input id="path" class="field" value="site" spellcheck="false" autocapitalize="off">
-        <p class="small">Save it as <code>.github/workflows/genhttp-pages.yml</code>:</p>
+        <p class="small">Save as <code>.github/workflows/genhttp-pages.yml</code>:</p>
         <div class="output">
           <pre><code id="folder-out"></code></pre>
           <button type="button" class="copy" data-copy="folder-out">Copy</button>
         </div>
-      </div>
+      </details>
     </li>
 
     <li class="step" id="step-push">
       <h3>Push</h3>
       <p>
-        The next run publishes the site and links it from the run's summary
-        (<code>page_url</code>, as before). Every deployment becomes a version of
-        the lambda; the same site pushed twice is published once.
-        <span id="push-address" hidden>Then it answers at <a href="#" target="_blank" rel="noopener"></a>.</span>
+        The first run binds the code to your repository and publishes the site. The job
+        needs <code>id-token: write</code>, which Pages workflows already have.
+        <a href="reference">Everything else</a>
       </p>
     </li>
   </ol>
-</section>
-
-<section id="reference" class="reference">
-  <h2>Reference</h2>
-
-  <p>
-    <code>Kaliumhexacyanoferrat/genhttp-pages@v1</code> takes every input of
-    <code>actions/deploy-pages</code>, so a workflow keeps working as it is, and answers
-    with the same <code>page_url</code>.
-  </p>
-
-  <h3>The inputs of deploy-pages</h3>
-  <div class="table">
-  <table>
-    <thead><tr><th>Input</th><th>Default</th><th>What it does here</th></tr></thead>
-    <tbody>
-      <tr><td><code>artifact_name</code></td><td><code>github-pages</code></td><td>The artifact to publish, as <code>actions/upload-pages-artifact</code> made it in an earlier job of the run.</td></tr>
-      <tr><td><code>timeout</code></td><td><code>600000</code></td><td>Milliseconds to wait for the upload.</td></tr>
-      <tr><td><code>preview</code></td><td><code>false</code></td><td>Publishes to a feature of the lambda instead, with an address of its own, named after the pull request. Delete it in the editor when you are done.</td></tr>
-      <tr><td><code>token</code></td><td><code>github.token</code></td><td>Used only to check out a branch.</td></tr>
-      <tr><td><code>error_count</code>, <code>reporting_interval</code></td><td></td><td>Accepted and not used: a lambda answers at once, so there is nothing to poll.</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <h3>Its own inputs</h3>
-  <div class="table">
-  <table>
-    <thead><tr><th>Input</th><th>Default</th><th>What it does</th></tr></thead>
-    <tbody>
-      <tr><td><code>key</code></td><td></td><td>The editor key of the lambda, from a secret. Left out, the <code>GENHTTP_KEY</code> environment variable is read.</td></tr>
-      <tr><td><code>path</code></td><td></td><td>Publish this folder rather than an artifact.</td></tr>
-      <tr><td><code>branch</code></td><td></td><td>Publish this branch, as GitHub's “Deploy from a branch” does.</td></tr>
-      <tr><td><code>folder</code></td><td><code>/</code></td><td>With <code>branch</code>: the folder to publish, <code>/</code> or <code>/docs</code>.</td></tr>
-      <tr><td><code>jekyll</code></td><td><code>auto</code></td><td>With <code>branch</code>: build with Jekyll unless there is a <code>.nojekyll</code> (<code>auto</code>), always (<code>true</code>) or never (<code>false</code>).</td></tr>
-      <tr><td><code>include_hidden_files</code></td><td><code>false</code></td><td>With <code>path</code> or <code>branch</code>: publish files starting with a dot, such as <code>.well-known/</code>. An artifact holds what its upload included.</td></tr>
-      <tr><td><code>base_path</code></td><td><code>auto</code></td><td>Where else the site answers. <code>auto</code> serves a project site at <code>/</code> and at <code>/repository/</code>, where it was built for; <code>none</code> serves the root only.</td></tr>
-      <tr><td><code>backend</code></td><td></td><td>A folder of C# published beside the site, see below.</td></tr>
-      <tr><td><code>server</code></td><td><code>https://genhttp.dev</code></td><td>Another installation of GenHTTP Lambda.</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <h3>Outputs</h3>
-  <div class="table">
-  <table>
-    <thead><tr><th>Output</th><th>What it holds</th></tr></thead>
-    <tbody>
-      <tr><td><code>page_url</code></td><td>The address the site answers at, such as <code>https://my-site.genhttp.run/</code>.</td></tr>
-      <tr><td><code>version</code></td><td>The version of the lambda that is online.</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <h3>Configuring the build</h3>
-  <p>
-    <code>actions/configure-pages</code> keeps working while GitHub Pages is enabled for the
-    repository. To switch Pages off, use its drop-in, which answers with the lambda's
-    address instead, without a base path:
-  </p>
-<pre class="block"><code>- id: pages
-  uses: Kaliumhexacyanoferrat/genhttp-pages/configure@v1
-  with:
-    key: ${{ secrets.GENHTTP_KEY }}
-# ${{ steps.pages.outputs.base_url }} is https://my-site.genhttp.run</code></pre>
-  <p class="small">
-    It does not rewrite the configuration of a static site generator as
-    <code>configure-pages</code> does with <code>static_site_generator</code>; a site at the
-    root of its address needs no base path.
-  </p>
-
-  <h3>How the site is served</h3>
-  <p>The way GitHub Pages serves it:</p>
-  <ul>
-    <li><code>/docs/</code> answers with <code>docs/index.html</code>, and <code>/docs</code> sends you there.</li>
-    <li><code>/about</code> answers with <code>about.html</code>.</li>
-    <li>What is not there answers with your <code>404.html</code> and status 404.</li>
-    <li>Every answer may be cached for ten minutes, is readable from any origin, and an unchanged file answers 304.</li>
-    <li>Names with spaces, accents, no extension or many folders work as they do on GitHub.</li>
-  </ul>
-
-  <h3 id="backend">A backend beside the site</h3>
-  <p>
-    A static site sometimes needs one endpoint: a form, a counter, a proxy to an API with a
-    key. Put C# into a folder and name it in <code>backend</code>. Its <code>lambda.cs</code>
-    puts routes in front of the site, and the site still answers everything else:
-  </p>
-<pre class="block"><code>// backend/lambda.cs
-var api = Inline.Create()
-                .Get("hello", (string name) =&gt; $"Hello, {name}!");
-
-return Layout.Create()
-             .Add("api", api)
-             .Add(PagesSite.Create());</code></pre>
-  <p class="small">
-    This page does it: <a href="https://github.com/Kaliumhexacyanoferrat/genhttp-pages/tree/main/website-backend">its backend</a>
-    creates the lambda in the first step. Secrets and a database are switched on in the
-    lambda's editor; read about them in the <a href="https://genhttp.dev/docs" target="_blank" rel="noopener">GenHTTP Lambda guide</a>.
-  </p>
-</section>
-
-<section id="differences" class="differences">
-  <h2>What is different from GitHub Pages</h2>
-  <dl>
-    <dt>The address</dt>
-    <dd>
-      Your site answers at <code>https://name.genhttp.run/</code>. A project site built for
-      <code>owner.github.io/repository/</code> still works: it is served at the root and
-      below <code>/repository/</code>.
-    </dd>
-
-    <dt>How long it stays online</dt>
-    <dd>
-      A free lambda stays online as long as it is used. One that nobody visits and nobody
-      deploys to for a month goes offline, and is removed two months after that. The
-      premium tier keeps it online.
-    </dd>
-
-    <dt>Size</dt>
-    <dd>
-      A free lambda holds 32 MB per deployment, against GitHub's 1 GB. The action says so
-      before it uploads, and how large the site is.
-    </dd>
-
-    <dt>Your own domain</dt>
-    <dd>
-      Comes with the premium tier, set in the lambda's editor. A <code>CNAME</code> file is
-      published like any other file.
-    </dd>
-
-    <dt>Permissions</dt>
-    <dd>
-      None needed: <code>pages: write</code>, <code>id-token: write</code> and the
-      <code>github-pages</code> environment do no harm and can stay.
-    </dd>
-
-    <dt>History</dt>
-    <dd>
-      Every deployment is a version you can read, compare and put back online in the
-      lambda's editor.
-    </dd>
-  </dl>
 </section>
 
 </main>

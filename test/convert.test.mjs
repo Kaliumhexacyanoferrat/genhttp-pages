@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { convert } from '../website/convert.js';
+import { convert, activationLine } from '../website/convert.js';
 
 const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
 
@@ -57,4 +57,10 @@ test('a step written as "- uses:" gets its inputs below it', () => {
 
 test('a workflow without the step is left alone', () => {
   assert.equal(convert('jobs: {}').changed, 0);
+});
+
+test('the activation code goes where the key would', () => {
+  const { text } = convert('      - uses: actions/deploy-pages@v5\n', activationLine('gp-abcde'));
+
+  assert.equal(text, '      - uses: Kaliumhexacyanoferrat/genhttp-pages@v1\n        with:\n          activation: gp-abcde\n');
 });

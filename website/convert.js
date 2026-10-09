@@ -3,11 +3,16 @@
 export const ACTION = 'Kaliumhexacyanoferrat/genhttp-pages@v1';
 export const KEY_LINE = 'key: ${{ secrets.GENHTTP_KEY }}';
 
+/** The input that tells the action which activation the repository has. */
+export const activationLine = (code) => `activation: ${code}`;
+
 /**
  * Replaces actions/deploy-pages with GenHTTP Pages in a workflow and hands
- * it the key - keeping everything else as it was written.
+ * it how to find the lambda - an activation code, or the key - keeping
+ * everything else as it was written.
  */
-export function convert(text) {
+export function convert(text, line = KEY_LINE) {
+  const name = line.slice(0, line.indexOf(':'));
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const found = /^(\s*)(-\s+)?uses:\s*["']?actions\/deploy-pages@[^\s"'#]+["']?(.*)$/;
 
@@ -60,13 +65,13 @@ export function convert(text) {
     if (withLine >= 0) {
       const next = lines.slice(withLine + 1).find(l => l.trim() !== '');
       const inner = next && next.length - next.trimStart().length > keys ? next.length - next.trimStart().length : keys + 2;
-      const hasKey = lines.slice(withLine + 1, end).some(l => /^\s*key:/.test(l));
+      const hasKey = lines.slice(withLine + 1, end).some(l => l.trimStart().startsWith(name + ':'));
 
       if (!hasKey) {
-        lines.splice(withLine + 1, 0, ' '.repeat(inner) + KEY_LINE);
+        lines.splice(withLine + 1, 0, ' '.repeat(inner) + line);
       }
     } else {
-      lines.splice(end, 0, ' '.repeat(keys) + 'with:', ' '.repeat(keys + 2) + KEY_LINE);
+      lines.splice(end, 0, ' '.repeat(keys) + 'with:', ' '.repeat(keys + 2) + line);
     }
   }
 
