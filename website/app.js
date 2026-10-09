@@ -208,8 +208,109 @@ function activated(answer) {
   code = answer.activation;
   renderAll();
 
+  remember({
+    repository: answer.repository,
+    address: answer.address,
+    editor: answer.editor,
+    activation: answer.activation,
+    activated: new Date().toISOString()
+  });
+
   $('editor-link').focus();
 }
+
+/* ---------- what this browser activated ---------- */
+
+// The editor link is the only way into the editor, and the broker cannot
+// hand it out again. So the browser that activated keeps it, as a bookmark
+// would: in this site's own storage, which no other lambda's page can read.
+
+const RECENT = 'genhttp-pages-activations';
+
+function recent() {
+  try {
+    const list = JSON.parse(localStorage.getItem(RECENT) ?? '[]');
+    return Array.isArray(list) ? list.filter(e => e && typeof e.editor === 'string' && e.editor.startsWith('https://')) : [];
+  } catch {
+    return [];
+  }
+}
+
+function store(list) {
+  try {
+    localStorage.setItem(RECENT, JSON.stringify(list));
+  } catch {
+    // private windows and blocked storage: the link is still on the page
+  }
+}
+
+function remember(entry) {
+  store([entry, ...recent().filter(e => e.activation !== entry.activation)].slice(0, 20));
+  renderRecent();
+}
+
+function forget(activation) {
+  store(recent().filter(e => e.activation !== activation));
+  renderRecent();
+}
+
+function renderRecent() {
+  const list = $('recent-list');
+  const entries = recent();
+
+  list.replaceChildren();
+  $('recent').hidden = entries.length === 0;
+
+  for (const entry of entries) {
+    const item = document.createElement('li');
+
+    const what = document.createElement('div');
+    what.className = 'recent-what';
+
+    const name = document.createElement('strong');
+    name.textContent = entry.repository;
+
+    const site = document.createElement('a');
+    site.href = entry.address;
+    site.target = '_blank';
+    site.rel = 'noopener';
+    site.textContent = entry.address.replace(/^https:\/\//, '').replace(/\/$/, '');
+
+    what.append(name, site);
+
+    const actions = document.createElement('div');
+    actions.className = 'recent-actions';
+
+    const open = document.createElement('a');
+    open.className = 'copy';
+    open.href = entry.editor;
+    open.target = '_blank';
+    open.rel = 'noopener';
+    open.textContent = 'Open editor';
+
+    const use = document.createElement('button');
+    use.type = 'button';
+    use.className = 'copy';
+    use.textContent = 'Use its code';
+    use.addEventListener('click', () => {
+      code = entry.activation;
+      renderAll();
+      $('step-workflow').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    });
+
+    const drop = document.createElement('button');
+    drop.type = 'button';
+    drop.className = 'link';
+    drop.textContent = 'Forget';
+    drop.addEventListener('click', () => forget(entry.activation));
+
+    actions.append(open, use, drop);
+    item.append(what, actions);
+    list.append(item);
+  }
+}
+
+renderRecent();
 
 /* ---------- step 2: the workflow ---------- */
 

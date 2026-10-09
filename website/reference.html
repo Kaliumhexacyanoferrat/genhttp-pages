@@ -57,6 +57,7 @@
     <li>Only someone who can change the repository's workflows gets the code into a run of it, so nobody can activate a repository that is not theirs. Once used, the code is bound and gives nothing to whoever reads it in a public workflow.</li>
     <li>A repository with one site may drop the code after the first run. With several, each workflow keeps its code to say which site it publishes.</li>
     <li>The job needs <code>permissions: id-token: write</code>, which Pages workflows have. Runs of forks get no token.</li>
+    <li>The browser that activated keeps the editor link, the address and the code, under "Activated in this browser" on the start page; nothing else can hand the link out again, so bookmark it to have it elsewhere.</li>
     <li>Editor keys are kept sealed with a key of their own, codes only as their hash. What is kept: the repository's name and id, and the lambda.</li>
     <li>Prefer a secret? The editor link ends with the editor key: store it as <code>GENHTTP_KEY</code> and pass <code>key: ${{ secrets.GENHTTP_KEY }}</code> instead of the activation.</li>
   </ul>

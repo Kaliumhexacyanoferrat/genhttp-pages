@@ -93,6 +93,11 @@
     <li class="step" id="step-activate">
       <h3>Activate it</h3>
 
+      <div id="recent" class="recent" hidden>
+        <p class="recent-head">Activated in this browser</p>
+        <ul id="recent-list"></ul>
+      </div>
+
       <form id="activate" class="activate" novalidate>
         <label for="repo">Repository</label>
         <input id="repo" class="field" placeholder="owner/repository" autocomplete="off" spellcheck="false" autocapitalize="off" required>
@@ -129,7 +134,8 @@
           <button type="button" class="copy" data-copy-href="editor-link">Copy the link</button>
         </p>
         <p class="small">
-          Bookmark it: the link is the only way into the editor, and it is shown once.
+          The link is the only way into the editor. This browser keeps it at the top of
+          this step; bookmark it to have it anywhere else.
           Your site will answer at <a id="site-link" href="#" target="_blank" rel="noopener"></a>.
         </p>
       </div>
