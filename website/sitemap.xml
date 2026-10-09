@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- the dates are stamped from the last commit of each page when the site is published (docs.yml) -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://pages.genhttp.run/</loc>
+    <lastmod>@index@</lastmod>
+  </url>
+  <url>
+    <loc>https://pages.genhttp.run/reference</loc>
+    <lastmod>@reference@</lastmod>
+  </url>
+</urlset>

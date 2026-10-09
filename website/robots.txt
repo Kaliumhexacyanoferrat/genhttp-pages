@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+# the same site, also served where GitHub Pages would have it
+Disallow: /genhttp-pages/
+
+Sitemap: https://pages.genhttp.run/sitemap.xml

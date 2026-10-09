@@ -1,7 +1,8 @@
 # GitHub's starter workflow for static content ("Deploy static content to
 # Pages"), with the two steps that talk to GitHub Pages swapped for GenHTTP
 # Pages - which is all a site has to change. It publishes website/, with the
-# C# of its setup assistant beside it, to https://pages.genhttp.run/.
+# C# of its setup assistant beside it, to https://pages.genhttp.run/. One step
+# of its own prepares the sitemap and llms-full.txt.
 #
 # No secret: the repository was activated at https://pages.genhttp.run/, and
 # the run is recognised by its OIDC token (id-token: write, as Pages has it).
@@ -41,14 +42,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # the whole history, for the dates in the sitemap
+          fetch-depth: 0
       - name: Setup Pages
         uses: ./configure
         with:
           activation: gp-jqc9b-wwuuf-ym49f-6qbdf
+      # what crawlers and language models read: the sitemap dated by the last
+      # commit of each page, and the README as the whole documentation
+      - name: Prepare for search engines
+        run: |
+          for page in index reference; do
+            sed -i "s|@$page@|$(git log -1 --format=%cs -- website/$page.html)|" website/sitemap.xml
+          done
+          cp README.md website/llms-full.txt
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
           path: 'website'
+          # .well-known/ai-catalog.json
+          include-hidden-files: true
       - name: Deploy to GitHub Pages
         id: deployment
         uses: ./

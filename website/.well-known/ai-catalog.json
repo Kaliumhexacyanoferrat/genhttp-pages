@@ -1,0 +1,43 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "GenHTTP Pages",
+    "documentationUrl": "https://pages.genhttp.run/reference"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:pages.genhttp.run:action:genhttp-pages",
+      "displayName": "GenHTTP Pages GitHub Action",
+      "type": "application/yaml",
+      "description": "A drop-in replacement for actions/deploy-pages that publishes a GitHub Pages site to GenHTTP Lambda, with traffic statistics, a request log, every deployment kept and an optional server part, without a secret.",
+      "representativeQueries": [
+        "replace actions/deploy-pages",
+        "add analytics to a GitHub Pages site without a tracking script",
+        "add a backend to a GitHub Pages site",
+        "deploy a static site from GitHub Actions without a secret"
+      ],
+      "url": "https://raw.githubusercontent.com/Kaliumhexacyanoferrat/genhttp-pages/v1/action.yml"
+    },
+    {
+      "identifier": "urn:air:pages.genhttp.run:docs:llms",
+      "displayName": "GenHTTP Pages documentation",
+      "type": "text/markdown",
+      "description": "The whole documentation of the action in one text: switching a workflow, activation, inputs, outputs and how a site is served.",
+      "url": "https://pages.genhttp.run/llms-full.txt"
+    },
+    {
+      "identifier": "urn:air:genhttp.dev:server:lambda",
+      "displayName": "GenHTTP Lambda",
+      "type": "application/mcp-server-card+json",
+      "description": "The platform a GenHTTP Pages site runs on: an agent adds or changes its server part - APIs, websockets, a database - with the site's dashboard link.",
+      "data": {
+        "name": "dev.genhttp/lambda",
+        "title": "GenHTTP Lambda",
+        "websiteUrl": "https://genhttp.dev",
+        "remotes": [
+          { "type": "streamable-http", "url": "https://genhttp.dev/mcp" }
+        ]
+      }
+    }
+  ]
+}

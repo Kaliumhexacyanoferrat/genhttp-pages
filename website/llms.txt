@@ -1,0 +1,22 @@
+# GenHTTP Pages
+
+> A drop-in replacement for the GitHub Action actions/deploy-pages. A site built for GitHub Pages is published to GenHTTP Lambda instead, and gets traffic statistics, a request log, every deployment kept and an optional server part. No secret and no account are needed.
+
+To switch a repository, replace `uses: actions/deploy-pages@v5` with `uses: Kaliumhexacyanoferrat/genhttp-pages@v1` and add `activation: <code>` under `with:`. The code comes from activating the repository at https://pages.genhttp.run/#setup, which also hands out the link to the site's dashboard. The job needs `permissions: id-token: write` (Pages workflows have it): after the first run, runs are recognised by their GitHub OIDC token. A secret is possible instead: `key: ${{ secrets.GENHTTP_KEY }}` with the editor key from the dashboard link.
+
+Every input of actions/deploy-pages is accepted; `page_url` is the output. Besides the Pages artifact, the action publishes a folder (`path`) or a branch built with Jekyll (`branch`, `folder`). Sites are served as GitHub Pages serves them (index.html for folders, .html without its extension, the site's 404.html, project sites also below /repository/).
+
+A server part - REST endpoints, websockets, server-sent events, a SQLite database, secrets - is added by an agent through the dashboard's Change section or through the GenHTTP Lambda MCP server. Ask it for the server part only: a push replaces the pages (resources/site/, resources/blobs/, resources/pages.json) and keeps everything else.
+
+## Pages
+
+- [GenHTTP Pages](https://pages.genhttp.run/): what it adds to GitHub Pages, and the assistant that activates a repository
+- [Reference](https://pages.genhttp.run/reference): every input and output, how activation works, how a site is served, and how it compares with GitHub Pages
+
+## For agents
+
+- [README](https://pages.genhttp.run/llms-full.txt): the whole documentation in one text
+- [action.yml](https://raw.githubusercontent.com/Kaliumhexacyanoferrat/genhttp-pages/v1/action.yml): the inputs and outputs of the action
+- [configure/action.yml](https://raw.githubusercontent.com/Kaliumhexacyanoferrat/genhttp-pages/v1/configure/action.yml): the drop-in for actions/configure-pages
+- [GenHTTP Lambda MCP server](https://genhttp.dev/mcp): changes a published site's server part; start with the platform_guide tool
+- [Source](https://github.com/Kaliumhexacyanoferrat/genhttp-pages): MIT licensed
