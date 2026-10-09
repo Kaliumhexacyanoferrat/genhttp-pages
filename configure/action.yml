@@ -8,7 +8,7 @@ branding:
 
 inputs:
   key:
-    description: 'The editor key of the lambda the site goes to - pass it from a secret: ${{ secrets.GENHTTP_KEY }}. Left out, the GENHTTP_KEY environment variable is read.'
+    description: 'The editor key of the lambda the site goes to - pass it from a secret, such as secrets.GENHTTP_KEY. Left out, the GENHTTP_KEY environment variable is read.'
     required: false
     default: ''
   server:
