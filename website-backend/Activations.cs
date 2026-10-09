@@ -5,8 +5,9 @@
 // person already has - and hands them its editor link and an activation code.
 // The code goes into their workflow once. The first run that presents it,
 // with a GitHub OIDC token of the repository it was made for, binds it to that
-// repository's GitHub id. From then on a token of that repository is enough
-// to be handed the editor key, which is how the action publishes.
+// repository's GitHub id. From then on the code and a token of that
+// repository are handed the editor key, which is how the action publishes -
+// and the token alone, while the repository publishes one site only.
 //
 // Why a code: activating by name alone would let anybody activate somebody
 // else's repository first and keep the editor link of the lambda it then
@@ -121,8 +122,17 @@ public static class Activations
         }
         else
         {
-            // the lambda the repository was bound to last
-            row = Find(connection, "repository_id = $id AND owner_id = $owner ORDER BY bound DESC", ("$id", run.RepositoryId), ("$owner", run.OwnerId));
+            // without a code, only where there is no doubt: a repository that
+            // publishes several sites says with its code which one this is,
+            // or a run would publish into another site's lambda
+            var bound = Count(connection, run);
+
+            if (bound > 1)
+            {
+                throw Refused($"{run.Repository} is activated for {bound} sites. Say which one this is with its activation code.");
+            }
+
+            row = bound == 1 ? Find(connection, "repository_id = $id AND owner_id = $owner", ("$id", run.RepositoryId), ("$owner", run.OwnerId)) : null;
 
             if (row == null)
             {
@@ -159,6 +169,18 @@ public static class Activations
 
         return new Row(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), reader.GetString(4),
                        reader.IsDBNull(5) ? null : reader.GetString(5));
+    }
+
+    private static long Count(SqliteConnection connection, GitHubRun run)
+    {
+        using var command = connection.CreateCommand();
+
+        command.CommandText = "SELECT COUNT(*) FROM activations WHERE repository_id = $id AND owner_id = $owner";
+
+        command.Parameters.AddWithValue("$id", run.RepositoryId);
+        command.Parameters.AddWithValue("$owner", run.OwnerId);
+
+        return (long)command.ExecuteScalar();
     }
 
     private static void Bind(SqliteConnection connection, long id, GitHubRun run)
