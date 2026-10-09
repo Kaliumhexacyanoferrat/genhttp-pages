@@ -39,7 +39,7 @@
   <h1>GitHub Pages, with stats, logs and a server.</h1>
   <p class="lede">
     Your build and your pages stay as they are. Change one step of the workflow, and the
-    site gets an editor with its traffic, every deployment and room for code. No secret,
+    site gets a dashboard with its traffic, every deployment and room for code. No secret,
     no account.
   </p>
 
@@ -60,11 +60,11 @@
 </section>
 
 <section id="tour" class="tour">
-  <h2>Every site gets an editor</h2>
+  <h2>Every site gets a dashboard</h2>
 
-  <div class="tabs" role="tablist" aria-label="The editor of a site">
+  <div class="tabs" role="tablist" aria-label="The dashboard of a site">
     <button type="button" role="tab" id="tour-overview" aria-controls="tour-panel" aria-selected="true" data-shot="overview"
-            data-say="How the site is doing at a glance, and what changed last. This is the editor of this very page.">Overview</button>
+            data-say="How the site is doing at a glance, and what changed last. This is the dashboard of this very page.">Overview</button>
     <button type="button" role="tab" id="tour-stats" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="stats"
             data-say="Requests, failures, pages not found and answer times, counted on the server: no script, no cookie, no consent banner.">Traffic</button>
     <button type="button" role="tab" id="tour-logs" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="logs"
@@ -76,12 +76,12 @@
   </div>
 
   <div id="tour-panel" role="tabpanel" aria-labelledby="tour-overview" class="tour-panel">
-    <p id="tour-say" class="tour-say">How the site is doing at a glance, and what changed last. This is the editor of this very page.</p>
+    <p id="tour-say" class="tour-say">How the site is doing at a glance, and what changed last. This is the dashboard of this very page.</p>
     <a id="tour-full" class="tour-shot" href="editor/overview-light.webp" target="_blank" rel="noopener" aria-label="Open the picture in full size">
     <picture>
       <source id="tour-dark" srcset="editor/overview-dark.webp" media="(prefers-color-scheme: dark)">
       <img id="tour-img" src="editor/overview-light.webp" width="1280" height="620"
-           alt="The editor of a site: its overview.">
+           alt="The dashboard of a site: its overview.">
     </picture>
     </a>
   </div>
@@ -114,11 +114,11 @@
         </div>
 
         <div id="own-lambda" hidden>
-          <label for="own-key">Editor key of your lambda</label>
-          <input id="own-key" class="field" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="the end of its editor link">
+          <label for="own-key">Its dashboard link</label>
+          <input id="own-key" class="field" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="https://genhttp.dev/editor/…">
         </div>
 
-        <p class="small"><button type="button" class="link" id="toggle-own">I have a lambda already</button></p>
+        <p class="small"><button type="button" class="link" id="toggle-own">My site is on GenHTTP already</button></p>
 
         <label class="check">
           <input type="checkbox" id="terms">
@@ -131,11 +131,11 @@
 
       <div id="activated" class="activated" hidden>
         <p class="editor-line">
-          <a id="editor-link" class="button" href="#" target="_blank" rel="noopener">Open your editor</a>
+          <a id="editor-link" class="button" href="#" target="_blank" rel="noopener">Open your dashboard</a>
           <button type="button" class="copy" data-copy-href="editor-link">Copy the link</button>
         </p>
         <p class="small">
-          The link is the only way into the editor. This browser keeps it at the top of
+          The link is the only way into the dashboard. This browser keeps it at the top of
           this step; bookmark it to have it anywhere else.
           Your site will answer at <a id="site-link" href="#" target="_blank" rel="noopener"></a>.
         </p>
@@ -211,7 +211,7 @@
 <section id="backend" class="backend">
   <h2>Need a server? Ask for it.</h2>
   <p class="lede">
-    Your site runs on a real web server, so it can have a server part. Ask the editor's
+    Your site runs on a real web server, so it can have a server part. Ask the dashboard's
     agent for it in Change, or your own agent through MCP: it is built beside your pages,
     which call it with <code>fetch('api/…')</code>. Ask for the server, not for pages:
     the pages stay in your repository, and a push replaces them and keeps the server.
@@ -221,7 +221,7 @@
     <picture>
       <source srcset="editor/change-dark.webp" media="(prefers-color-scheme: dark)">
       <img src="editor/change-light.webp" width="1060" height="600" loading="lazy"
-           alt="The Change section of a site's editor: asked for an API that stores the sign-ups of a newsletter form, leaving the site as it is, the agent put it online in 49 seconds.">
+           alt="The Change section of a site's dashboard: asked for an API that stores the sign-ups of a newsletter form, leaving the site as it is, the agent put it online in 49 seconds.">
     </picture>
   </a>
 
@@ -275,7 +275,7 @@
         <code id="mcp-command">claude mcp add --transport http genhttp https://genhttp.dev/mcp</code>
         <button type="button" class="copy" data-copy="mcp-command">Copy</button>
       </div>
-      <p class="for">then hand it your editor link</p>
+      <p class="for">then hand it your dashboard link</p>
     </div>
   </div>
 </section>

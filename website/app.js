@@ -48,7 +48,7 @@ tabs(document.querySelector('.tour [role="tablist"]'), (tab) => {
 
   $('tour-dark').srcset = `editor/${shot}-dark.webp`;
   $('tour-img').src = `editor/${shot}-light.webp`;
-  $('tour-img').alt = `The editor of a site: ${tab.textContent.toLowerCase()}. ${tab.dataset.say}`;
+  $('tour-img').alt = `The dashboard of a site: ${tab.textContent.toLowerCase()}. ${tab.dataset.say}`;
   $('tour-say').textContent = tab.dataset.say;
   $('tour-panel').setAttribute('aria-labelledby', tab.id);
   $('tour-full').href = `editor/${shot}-${scheme()}.webp`;
@@ -125,11 +125,76 @@ $('name').addEventListener('input', () => {
 
 setStatus($('name-status'), 'Left empty, the site gets a random address.');
 
+// the address follows the repository's name until somebody types one: "blog"
+// for octo/blog, "octo" for octo/octo.github.io, and "octo-blog" where that is taken
+
+let addressTyped = false;
+
+$('name').addEventListener('input', (event) => {
+  if (event.isTrusted) {
+    addressTyped = $('name').value.trim() !== '';
+  }
+});
+
+function slug(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 40).replace(/-+$/, '');
+}
+
+function suggestions(repo) {
+  const [owner, name] = repo.split('/');
+  const own = /\.github\.io$/i.test(name) ? slug(owner) : slug(name);
+
+  return [...new Set([own, slug(`${owner}-${own}`)])].filter(key => KEY_PATTERN.test(key));
+}
+
+function suggest(address) {
+  $('name').value = address;
+  $('name').dispatchEvent(new Event('input'));
+}
+
+let suggestTimer;
+
+$('repo').addEventListener('input', () => {
+  clearTimeout(suggestTimer);
+
+  const repo = repository();
+
+  if (!repo || addressTyped || ownLambda) {
+    return;
+  }
+
+  suggestTimer = setTimeout(async () => {
+    const candidates = suggestions(repo);
+
+    for (const candidate of candidates) {
+      if (addressTyped || repository() !== repo) {
+        return;
+      }
+
+      try {
+        const answer = await (await fetch('api/keys/' + encodeURIComponent(candidate))).json();
+
+        if (answer.available) {
+          suggest(candidate);
+          return;
+        }
+      } catch {
+        break;
+      }
+    }
+
+    // nothing free: show the first, and the check below it says it is taken
+    if (candidates.length && !addressTyped && repository() === repo) {
+      suggest(candidates[0]);
+    }
+  }, 400);
+});
+
 $('toggle-own').addEventListener('click', () => {
   ownLambda = !ownLambda;
   $('own-lambda').hidden = !ownLambda;
   $('new-lambda').hidden = ownLambda;
-  $('toggle-own').textContent = ownLambda ? 'Make a new lambda instead' : 'I have a lambda already';
+  $('toggle-own').textContent = ownLambda ? 'Make a new site instead' : 'My site is on GenHTTP already';
   (ownLambda ? $('own-key') : $('name')).focus();
 });
 
@@ -154,7 +219,7 @@ $('activate').addEventListener('submit', async (event) => {
   }
 
   if (ownLambda && !ownKey) {
-    return fail('Paste the editor key of your lambda, or make a new one.', $('own-key'));
+    return fail('Paste the dashboard link of your site, or make a new one.', $('own-key'));
   }
 
   if (!ownLambda && name && !KEY_PATTERN.test(name)) {
@@ -286,7 +351,7 @@ function renderRecent() {
     open.href = entry.editor;
     open.target = '_blank';
     open.rel = 'noopener';
-    open.textContent = 'Open editor';
+    open.textContent = 'Open dashboard';
 
     const use = document.createElement('button');
     use.type = 'button';
