@@ -1,0 +1,12 @@
+{
+  "name": "genhttp-pages",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A drop-in replacement for actions/deploy-pages that publishes to GenHTTP Lambda",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}

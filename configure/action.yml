@@ -1,0 +1,73 @@
+name: 'GenHTTP Pages - configure'
+description: 'A drop-in for actions/configure-pages: the address your site will answer at on GenHTTP Lambda, for the static site generator to build with.'
+author: 'GenHTTP'
+
+branding:
+  icon: 'settings'
+  color: 'blue'
+
+inputs:
+  key:
+    description: 'The editor key of the lambda the site goes to - pass it from a secret: ${{ secrets.GENHTTP_KEY }}. Left out, the GENHTTP_KEY environment variable is read.'
+    required: false
+    default: ''
+  server:
+    description: 'The GenHTTP Lambda installation to publish to.'
+    required: false
+    default: 'https://genhttp.dev'
+  static_site_generator:
+    description: 'Kept from actions/configure-pages and not applied: the site is served at the root of its address, so there is no base path to configure.'
+    required: false
+  generator_config_file:
+    description: 'Kept from actions/configure-pages and not used.'
+    required: false
+  token:
+    description: 'Kept from actions/configure-pages and not used.'
+    required: false
+    default: ${{ github.token }}
+  enablement:
+    description: 'Kept from actions/configure-pages and not used: GitHub Pages does not need to be enabled.'
+    required: false
+    default: 'false'
+
+outputs:
+  base_url:
+    description: 'The full base URL of the site, without a trailing slash: "https://my-site.genhttp.run"'
+    value: ${{ steps.configure.outputs.base_url }}
+  origin:
+    description: 'The origin of the site: "https://my-site.genhttp.run"'
+    value: ${{ steps.configure.outputs.origin }}
+  host:
+    description: 'The host of the site: "my-site.genhttp.run"'
+    value: ${{ steps.configure.outputs.host }}
+  base_path:
+    description: 'The base path of the site - always "", since a lambda answers at the root of its address.'
+    value: ${{ steps.configure.outputs.base_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Look for Node.js
+      id: node
+      shell: bash
+      run: |
+        if command -v node >/dev/null 2>&1 && [ "$(node -p 'process.versions.node.split(".")[0]')" -ge 20 ]; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Set up Node.js
+      if: steps.node.outputs.found != 'true'
+      uses: actions/setup-node@v7
+      with:
+        node-version: 24
+
+    - name: Find the address
+      id: configure
+      shell: bash
+      env:
+        INPUT_KEY: ${{ inputs.key }}
+        INPUT_SERVER: ${{ inputs.server }}
+        INPUT_STATIC_SITE_GENERATOR: ${{ inputs.static_site_generator }}
+      run: node "$GITHUB_ACTION_PATH/../src/configure.mjs"

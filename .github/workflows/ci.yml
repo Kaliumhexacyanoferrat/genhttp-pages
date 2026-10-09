@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node --test test/
+
+  compile:
+    name: The handler compiles on GenHTTP Lambda
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v7
+      - run: node tools/check.mjs "$KEY" lambda.cs=lambda/lambda.cs pages/PagesSite.cs=lambda/PagesSite.cs
+        env:
+          KEY: ${{ secrets.GENHTTP_TEST_KEY }}
+
+  # the three ways a site gets to the action, one after the other into the
+  # same test lambda, each checked as a browser sees it
+
+  build:
+    name: Build like a Pages workflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: test/fixtures/site
+          include-hidden-files: true
+
+  artifact:
+    name: Deploy the Pages artifact
+    needs: [unit, compile, build]
+    runs-on: ubuntu-latest
+    concurrency: e2e
+    steps:
+      - uses: actions/checkout@v7
+      - id: deployment
+        uses: ./
+        with:
+          key: ${{ secrets.GENHTTP_TEST_KEY }}
+      - run: node test/e2e.mjs "${{ steps.deployment.outputs.page_url }}" site
+
+  branch:
+    name: Deploy a branch with Jekyll
+    needs: artifact
+    runs-on: ubuntu-latest
+    concurrency: e2e
+    steps:
+      - uses: actions/checkout@v7
+      - id: deployment
+        uses: ./
+        with:
+          key: ${{ secrets.GENHTTP_TEST_KEY }}
+          branch: ${{ github.head_ref || github.ref_name }}
+          folder: /test/fixtures/jekyll
+      - run: node test/e2e.mjs "${{ steps.deployment.outputs.page_url }}" jekyll
+
+  path:
+    name: Deploy a folder, again unchanged
+    needs: branch
+    runs-on: ubuntu-latest
+    concurrency: e2e
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./
+        with:
+          key: ${{ secrets.GENHTTP_TEST_KEY }}
+          path: test/fixtures/site
+          include_hidden_files: true
+      # the same site once more is no new version
+      - id: again
+        uses: ./
+        with:
+          key: ${{ secrets.GENHTTP_TEST_KEY }}
+          path: test/fixtures/site
+          include_hidden_files: true
+      - run: node test/e2e.mjs "${{ steps.again.outputs.page_url }}" site
+
+  missing-key:
+    name: Without a key, it says what to do
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - id: deployment
+        uses: ./
+        continue-on-error: true
+        with:
+          path: test/fixtures/site
+      - if: steps.deployment.outcome != 'failure'
+        run: |
+          echo "::error::Deploying without a key should fail."
+          exit 1

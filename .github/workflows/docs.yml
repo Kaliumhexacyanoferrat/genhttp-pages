@@ -1,0 +1,53 @@
+# GitHub's starter workflow for static content ("Deploy static content to
+# Pages"), with the two steps that talk to GitHub Pages swapped for GenHTTP
+# Pages - which is all a site has to change. It publishes website/, with the
+# C# of its setup assistant beside it, to https://pages.genhttp.run/.
+#
+# It uses the action from this commit (./), so the documentation is also the
+# last test of every change.
+name: Deploy static content to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: [main]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Pages
+        uses: ./configure
+        with:
+          key: ${{ secrets.GENHTTP_KEY }}
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: 'website'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: ./
+        with:
+          key: ${{ secrets.GENHTTP_KEY }}
+          backend: website-backend

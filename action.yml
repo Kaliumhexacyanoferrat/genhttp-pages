@@ -1,0 +1,190 @@
+name: 'GenHTTP Pages'
+description: 'Publish your GitHub Pages site to GenHTTP Lambda. A drop-in for actions/deploy-pages: change the uses line, add your key.'
+author: 'GenHTTP'
+
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  key:
+    description: 'The editor key of the lambda to publish to - pass it from a secret: ${{ secrets.GENHTTP_KEY }}. Left out, the GENHTTP_KEY environment variable is read.'
+    required: false
+    default: ''
+
+  # the inputs of actions/deploy-pages, so a workflow keeps working as it is
+  token:
+    description: 'GitHub token, used to check out a branch for "branch". Kept from actions/deploy-pages.'
+    required: false
+    default: ${{ github.token }}
+  timeout:
+    description: 'Time in milliseconds after which to give up on the upload (default: 10 minutes).'
+    required: false
+    default: '600000'
+  error_count:
+    description: 'Kept from actions/deploy-pages and not used: a deployment is answered at once, there is nothing to poll.'
+    required: false
+    default: '10'
+  reporting_interval:
+    description: 'Kept from actions/deploy-pages and not used: a deployment is answered at once, there is nothing to poll.'
+    required: false
+    default: '5000'
+  artifact_name:
+    description: 'Name of the artifact to deploy, as uploaded by actions/upload-pages-artifact.'
+    required: false
+    default: 'github-pages'
+  preview:
+    description: 'Publish a preview instead of the site: a feature of the lambda, with an address of its own, named after the pull request.'
+    required: false
+    default: 'false'
+
+  # where else the site may come from
+  path:
+    description: 'Publish this folder instead of an artifact - no upload-pages-artifact step needed.'
+    required: false
+    default: ''
+  branch:
+    description: 'Publish a branch, as GitHub Pages does with "Deploy from a branch" - built with Jekyll unless it has a .nojekyll file.'
+    required: false
+    default: ''
+  folder:
+    description: 'With "branch": the folder of the branch to publish, "/" or "/docs".'
+    required: false
+    default: '/'
+  jekyll:
+    description: 'With "branch": "auto" builds with Jekyll unless there is a .nojekyll file, "true" always, "false" never.'
+    required: false
+    default: 'auto'
+  include_hidden_files:
+    description: 'With "path" or "branch": publish files and folders starting with a dot (.well-known, say). An artifact holds what its upload included.'
+    required: false
+    default: 'false'
+
+  # seldom needed
+  base_path:
+    description: 'Folders the site is also served below, for sites built for https://owner.github.io/repo/. "auto" serves /repo/ unless the site has a CNAME or is a user page; "none" serves the root only; or paths separated by commas.'
+    required: false
+    default: 'auto'
+  backend:
+    description: 'A folder of C# to deploy beside the site. Its lambda.cs replaces the default "return PagesSite.Create();" - add routes in front of the site with Layout.Create().Add("api", ...).Add(PagesSite.Create()).'
+    required: false
+    default: ''
+  server:
+    description: 'The GenHTTP Lambda installation to publish to.'
+    required: false
+    default: 'https://genhttp.dev'
+
+outputs:
+  page_url:
+    description: 'The address the site answers at.'
+    value: ${{ steps.deploy.outputs.page_url }}
+  version:
+    description: 'The version of the lambda that is online.'
+    value: ${{ steps.deploy.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Find the site
+      id: mode
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_BRANCH: ${{ inputs.branch }}
+      run: |
+        if [ -n "$INPUT_BRANCH" ]; then
+          echo "mode=branch" >> "$GITHUB_OUTPUT"
+          echo "checkout=.genhttp-pages/branch" >> "$GITHUB_OUTPUT"
+        elif [ -n "$INPUT_PATH" ]; then
+          echo "mode=path" >> "$GITHUB_OUTPUT"
+          echo "source=$INPUT_PATH" >> "$GITHUB_OUTPUT"
+        else
+          echo "mode=artifact" >> "$GITHUB_OUTPUT"
+          echo "source=$RUNNER_TEMP/genhttp-pages-artifact" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Download the Pages artifact
+      if: steps.mode.outputs.mode == 'artifact'
+      uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ steps.mode.outputs.source }}
+
+    - name: Check out the branch
+      if: steps.mode.outputs.mode == 'branch'
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.branch }}
+        path: ${{ steps.mode.outputs.checkout }}
+        token: ${{ inputs.token }}
+        submodules: true
+        persist-credentials: false
+
+    - name: Decide on Jekyll
+      id: branch
+      if: steps.mode.outputs.mode == 'branch'
+      shell: bash
+      env:
+        CHECKOUT: ${{ steps.mode.outputs.checkout }}
+        INPUT_FOLDER: ${{ inputs.folder }}
+        INPUT_JEKYLL: ${{ inputs.jekyll }}
+      run: |
+        folder="${INPUT_FOLDER#/}"
+        folder="${folder%/}"
+        source="$CHECKOUT${folder:+/$folder}"
+        if [ ! -d "$source" ]; then
+          echo "::error::The branch has no folder '/$folder' to publish."
+          exit 1
+        fi
+        case "$INPUT_JEKYLL" in
+          true)  jekyll=true ;;
+          false) jekyll=false ;;
+          *)     if [ -f "$source/.nojekyll" ]; then jekyll=false; else jekyll=true; fi ;;
+        esac
+        echo "folder=./$source" >> "$GITHUB_OUTPUT"
+        echo "jekyll=$jekyll" >> "$GITHUB_OUTPUT"
+        if [ "$jekyll" = true ]; then
+          echo "source=.genhttp-pages/_site" >> "$GITHUB_OUTPUT"
+        else
+          echo "source=$source" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Build with Jekyll
+      if: steps.branch.outputs.jekyll == 'true'
+      uses: actions/jekyll-build-pages@v1
+      with:
+        source: ${{ steps.branch.outputs.folder }}
+        destination: ./.genhttp-pages/_site
+        token: ${{ inputs.token }}
+
+    - name: Look for Node.js
+      id: node
+      shell: bash
+      run: |
+        if command -v node >/dev/null 2>&1 && [ "$(node -p 'process.versions.node.split(".")[0]')" -ge 20 ]; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Set up Node.js
+      if: steps.node.outputs.found != 'true'
+      uses: actions/setup-node@v7
+      with:
+        node-version: 24
+
+    - name: Publish to GenHTTP Lambda
+      id: deploy
+      shell: bash
+      env:
+        GENHTTP_PAGES_MODE: ${{ steps.mode.outputs.mode }}
+        GENHTTP_PAGES_SOURCE: ${{ steps.branch.outputs.source || steps.mode.outputs.source }}
+        INPUT_KEY: ${{ inputs.key }}
+        INPUT_TIMEOUT: ${{ inputs.timeout }}
+        INPUT_ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        INPUT_PREVIEW: ${{ inputs.preview }}
+        INPUT_INCLUDE_HIDDEN_FILES: ${{ inputs.include_hidden_files }}
+        INPUT_BASE_PATH: ${{ inputs.base_path }}
+        INPUT_BACKEND: ${{ inputs.backend }}
+        INPUT_SERVER: ${{ inputs.server }}
+      run: node "$GITHUB_ACTION_PATH/src/main.mjs"

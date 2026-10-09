@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GenHTTP Pages – publish your GitHub Pages site to GenHTTP Lambda</title>
+  <meta name="description" content="A drop-in replacement for actions/deploy-pages. Change one line of your GitHub Actions workflow and your static site is hosted on GenHTTP Lambda, free, with no account.">
+  <link rel="canonical" href="https://pages.genhttp.run/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="GenHTTP Pages">
+  <meta property="og:description" content="Change one line of your GitHub Pages workflow and host the site on GenHTTP Lambda.">
+  <meta property="og:url" content="https://pages.genhttp.run/">
+  <meta property="og:image" content="https://pages.genhttp.run/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#F2F6F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0D1828" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@87.5,400;87.5,600&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" type="module"></script>
+</head>
+<body>
+
+<header class="bar">
+  <a class="brand" href="./">GenHTTP Pages</a>
+  <nav>
+    <a href="#setup">Set up</a>
+    <a href="#reference">Reference</a>
+    <a href="#differences">Differences</a>
+    <a href="https://github.com/Kaliumhexacyanoferrat/genhttp-pages">GitHub</a>
+  </nav>
+</header>
+
+<main>
+
+<section class="hero">
+  <h1>Your GitHub Pages site, hosted on GenHTTP&nbsp;Lambda.</h1>
+  <p class="lede">
+    GenHTTP Pages replaces <code>actions/deploy-pages</code>. Keep your workflow,
+    your build and your artifact. Change the step that deploys, hand it a key, and
+    the next push publishes to <span class="nowrap">your-site.genhttp.run</span>.
+  </p>
+
+  <figure class="diff" aria-label="The change to a GitHub Pages workflow">
+    <figcaption>.github/workflows/pages.yml</figcaption>
+<pre><code><span class="ctx">deploy:</span>
+<span class="ctx">  environment:</span>
+<span class="ctx">    name: github-pages</span>
+<span class="ctx">    url: ${{ steps.deployment.outputs.page_url }}</span>
+<span class="ctx">  runs-on: ubuntu-latest</span>
+<span class="ctx">  needs: build</span>
+<span class="ctx">  steps:</span>
+<span class="ctx">    - id: deployment</span>
+<span class="del" aria-label="removed">      uses: actions/deploy-pages@v5</span>
+<span class="add" aria-label="added">      uses: Kaliumhexacyanoferrat/genhttp-pages@v1</span>
+<span class="add" aria-label="added">      with:</span>
+<span class="add" aria-label="added">        key: ${{ secrets.GENHTTP_KEY }}</span></code></pre>
+  </figure>
+
+  <p class="actions">
+    <a class="button" href="#setup">Set it up</a>
+    <a class="quiet" href="#reference">Read the reference</a>
+  </p>
+</section>
+
+<section id="setup" class="setup">
+  <h2>Set it up</h2>
+  <p>Four steps, about two minutes. Nothing here needs an account.</p>
+
+  <ol class="steps">
+    <li class="step" id="step-create">
+      <h3>Create a lambda for the site</h3>
+      <p>
+        A lambda is what hosts the site. Pick its address, or leave the field
+        empty for a random one. Already have a lambda? Skip to the next step with
+        its editor key.
+      </p>
+
+      <form id="create" class="create" novalidate>
+        <label for="name">Address</label>
+        <div class="address">
+          <span class="scheme">https://</span>
+          <input id="name" name="name" autocomplete="off" spellcheck="false" autocapitalize="off"
+                 placeholder="my-site" maxlength="40" aria-describedby="name-status">
+          <span class="domain">.genhttp.run</span>
+        </div>
+        <p id="name-status" class="status" aria-live="polite"></p>
+
+        <label class="check">
+          <input type="checkbox" id="terms" required>
+          <span>I accept the <a href="https://genhttp.dev/terms" target="_blank" rel="noopener">terms of GenHTTP Lambda</a>: no malware, phishing, attacks or content I have no right to publish.</span>
+        </label>
+
+        <button type="submit" class="button" id="create-button">Create lambda</button>
+        <p id="create-error" class="error" role="alert" hidden></p>
+      </form>
+
+      <div id="created" class="created" hidden>
+        <p>Your site will answer at <a id="created-address" href="#" target="_blank" rel="noopener"></a>.</p>
+        <p class="key-label" id="key-label">Its editor key. Copy it now: it is shown only once, and it is the only way to change the lambda.</p>
+        <div class="key" aria-labelledby="key-label">
+          <code id="created-key"></code>
+          <button type="button" class="copy" data-copy="created-key">Copy</button>
+        </div>
+        <p class="small">
+          The key opens the lambda's <a id="created-editor" href="#" target="_blank" rel="noopener">editor</a>,
+          where you see every deployment, roll one back, read the traffic and change the address.
+          Treat it like a password.
+        </p>
+      </div>
+    </li>
+
+    <li class="step" id="step-secret">
+      <h3>Store the key in your repository</h3>
+      <p>
+        Add a repository secret named <code>GENHTTP_KEY</code> with the editor key as its
+        value. Secrets are never shown in logs, and GitHub Pages is not involved, so
+        the repository does not need Pages enabled.
+      </p>
+
+      <label for="repo">Your repository</label>
+      <input id="repo" class="field" placeholder="owner/repository" autocomplete="off" spellcheck="false" autocapitalize="off">
+      <p class="links">
+        <a id="secret-link" href="https://docs.github.com/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository" target="_blank" rel="noopener">Open the secrets of the repository</a>
+      </p>
+      <p class="small">Or with the GitHub CLI, which asks for the value:</p>
+      <div class="shell">
+        <code id="gh-command">gh secret set GENHTTP_KEY</code>
+        <button type="button" class="copy" data-copy="gh-command">Copy</button>
+      </div>
+    </li>
+
+    <li class="step" id="step-workflow">
+      <h3>Change the workflow</h3>
+      <p>How does your site get published today?</p>
+
+      <div class="tabs" role="tablist" aria-label="How the site is published today">
+        <button type="button" role="tab" id="tab-actions" aria-controls="panel-actions" aria-selected="true">With GitHub Actions</button>
+        <button type="button" role="tab" id="tab-branch" aria-controls="panel-branch" aria-selected="false" tabindex="-1">From a branch</button>
+        <button type="button" role="tab" id="tab-folder" aria-controls="panel-folder" aria-selected="false" tabindex="-1">Not yet</button>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-actions" aria-labelledby="tab-actions">
+        <p>
+          Your workflow ends with <code>actions/deploy-pages</code>. Replace that line and add
+          the key, as at the top of this page. Everything else stays: the build, the
+          <code>upload-pages-artifact</code> step, the environment, the permissions.
+        </p>
+        <p>Or paste the workflow here, and get it back changed:</p>
+        <label for="workflow-in" class="visually-hidden">Your workflow</label>
+        <textarea id="workflow-in" class="code-input" rows="8" spellcheck="false" placeholder="Paste .github/workflows/….yml"></textarea>
+        <p id="workflow-status" class="status" aria-live="polite"></p>
+        <div class="output" id="workflow-out-wrap" hidden>
+          <pre><code id="workflow-out"></code></pre>
+          <button type="button" class="copy" data-copy="workflow-out">Copy</button>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-branch" aria-labelledby="tab-branch" hidden>
+        <p>
+          GitHub publishes your branch without a workflow. GenHTTP Pages needs one, which does
+          the same: it checks out the branch, builds it with Jekyll unless it has a
+          <code>.nojekyll</code> file, and publishes it on every push.
+        </p>
+        <div class="pair">
+          <div>
+            <label for="branch">Branch</label>
+            <input id="branch" class="field" value="gh-pages" spellcheck="false" autocapitalize="off">
+          </div>
+          <div>
+            <label for="folder">Folder</label>
+            <select id="folder" class="field">
+              <option value="/">/ (root)</option>
+              <option value="/docs">/docs</option>
+            </select>
+          </div>
+        </div>
+        <p class="small">Save it as <code>.github/workflows/genhttp-pages.yml</code> on your default branch:</p>
+        <div class="output">
+          <pre><code id="branch-out"></code></pre>
+          <button type="button" class="copy" data-copy="branch-out">Copy</button>
+        </div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="panel-folder" aria-labelledby="tab-folder" hidden>
+        <p>
+          Publish a folder of your repository as it is: plain HTML, or whatever a build
+          step before it writes.
+        </p>
+        <label for="path">Folder</label>
+        <input id="path" class="field" value="site" spellcheck="false" autocapitalize="off">
+        <p class="small">Save it as <code>.github/workflows/genhttp-pages.yml</code>:</p>
+        <div class="output">
+          <pre><code id="folder-out"></code></pre>
+          <button type="button" class="copy" data-copy="folder-out">Copy</button>
+        </div>
+      </div>
+    </li>
+
+    <li class="step" id="step-push">
+      <h3>Push</h3>
+      <p>
+        The next run publishes the site and links it from the run's summary
+        (<code>page_url</code>, as before). Every deployment becomes a version of
+        the lambda; the same site pushed twice is published once.
+        <span id="push-address" hidden>Then it answers at <a href="#" target="_blank" rel="noopener"></a>.</span>
+      </p>
+    </li>
+  </ol>
+</section>
+
+<section id="reference" class="reference">
+  <h2>Reference</h2>
+
+  <p>
+    <code>Kaliumhexacyanoferrat/genhttp-pages@v1</code> takes every input of
+    <code>actions/deploy-pages</code>, so a workflow keeps working as it is, and answers
+    with the same <code>page_url</code>.
+  </p>
+
+  <h3>The inputs of deploy-pages</h3>
+  <div class="table">
+  <table>
+    <thead><tr><th>Input</th><th>Default</th><th>What it does here</th></tr></thead>
+    <tbody>
+      <tr><td><code>artifact_name</code></td><td><code>github-pages</code></td><td>The artifact to publish, as <code>actions/upload-pages-artifact</code> made it in an earlier job of the run.</td></tr>
+      <tr><td><code>timeout</code></td><td><code>600000</code></td><td>Milliseconds to wait for the upload.</td></tr>
+      <tr><td><code>preview</code></td><td><code>false</code></td><td>Publishes to a feature of the lambda instead, with an address of its own, named after the pull request. Delete it in the editor when you are done.</td></tr>
+      <tr><td><code>token</code></td><td><code>github.token</code></td><td>Used only to check out a branch.</td></tr>
+      <tr><td><code>error_count</code>, <code>reporting_interval</code></td><td></td><td>Accepted and not used: a lambda answers at once, so there is nothing to poll.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Its own inputs</h3>
+  <div class="table">
+  <table>
+    <thead><tr><th>Input</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>key</code></td><td></td><td>The editor key of the lambda, from a secret. Left out, the <code>GENHTTP_KEY</code> environment variable is read.</td></tr>
+      <tr><td><code>path</code></td><td></td><td>Publish this folder rather than an artifact.</td></tr>
+      <tr><td><code>branch</code></td><td></td><td>Publish this branch, as GitHub's “Deploy from a branch” does.</td></tr>
+      <tr><td><code>folder</code></td><td><code>/</code></td><td>With <code>branch</code>: the folder to publish, <code>/</code> or <code>/docs</code>.</td></tr>
+      <tr><td><code>jekyll</code></td><td><code>auto</code></td><td>With <code>branch</code>: build with Jekyll unless there is a <code>.nojekyll</code> (<code>auto</code>), always (<code>true</code>) or never (<code>false</code>).</td></tr>
+      <tr><td><code>include_hidden_files</code></td><td><code>false</code></td><td>With <code>path</code> or <code>branch</code>: publish files starting with a dot, such as <code>.well-known/</code>. An artifact holds what its upload included.</td></tr>
+      <tr><td><code>base_path</code></td><td><code>auto</code></td><td>Where else the site answers. <code>auto</code> serves a project site at <code>/</code> and at <code>/repository/</code>, where it was built for; <code>none</code> serves the root only.</td></tr>
+      <tr><td><code>backend</code></td><td></td><td>A folder of C# published beside the site, see below.</td></tr>
+      <tr><td><code>server</code></td><td><code>https://genhttp.dev</code></td><td>Another installation of GenHTTP Lambda.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Outputs</h3>
+  <div class="table">
+  <table>
+    <thead><tr><th>Output</th><th>What it holds</th></tr></thead>
+    <tbody>
+      <tr><td><code>page_url</code></td><td>The address the site answers at, such as <code>https://my-site.genhttp.run/</code>.</td></tr>
+      <tr><td><code>version</code></td><td>The version of the lambda that is online.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Configuring the build</h3>
+  <p>
+    <code>actions/configure-pages</code> keeps working while GitHub Pages is enabled for the
+    repository. To switch Pages off, use its drop-in, which answers with the lambda's
+    address instead, without a base path:
+  </p>
+<pre class="block"><code>- id: pages
+  uses: Kaliumhexacyanoferrat/genhttp-pages/configure@v1
+  with:
+    key: ${{ secrets.GENHTTP_KEY }}
+# ${{ steps.pages.outputs.base_url }} is https://my-site.genhttp.run</code></pre>
+  <p class="small">
+    It does not rewrite the configuration of a static site generator as
+    <code>configure-pages</code> does with <code>static_site_generator</code>; a site at the
+    root of its address needs no base path.
+  </p>
+
+  <h3>How the site is served</h3>
+  <p>The way GitHub Pages serves it:</p>
+  <ul>
+    <li><code>/docs/</code> answers with <code>docs/index.html</code>, and <code>/docs</code> sends you there.</li>
+    <li><code>/about</code> answers with <code>about.html</code>.</li>
+    <li>What is not there answers with your <code>404.html</code> and status 404.</li>
+    <li>Every answer may be cached for ten minutes, is readable from any origin, and an unchanged file answers 304.</li>
+    <li>Names with spaces, accents, no extension or many folders work as they do on GitHub.</li>
+  </ul>
+
+  <h3 id="backend">A backend beside the site</h3>
+  <p>
+    A static site sometimes needs one endpoint: a form, a counter, a proxy to an API with a
+    key. Put C# into a folder and name it in <code>backend</code>. Its <code>lambda.cs</code>
+    puts routes in front of the site, and the site still answers everything else:
+  </p>
+<pre class="block"><code>// backend/lambda.cs
+var api = Inline.Create()
+                .Get("hello", (string name) =&gt; $"Hello, {name}!");
+
+return Layout.Create()
+             .Add("api", api)
+             .Add(PagesSite.Create());</code></pre>
+  <p class="small">
+    This page does it: <a href="https://github.com/Kaliumhexacyanoferrat/genhttp-pages/tree/main/website-backend">its backend</a>
+    creates the lambda in the first step. Secrets and a database are switched on in the
+    lambda's editor; read about them in the <a href="https://genhttp.dev/docs" target="_blank" rel="noopener">GenHTTP Lambda guide</a>.
+  </p>
+</section>
+
+<section id="differences" class="differences">
+  <h2>What is different from GitHub Pages</h2>
+  <dl>
+    <dt>The address</dt>
+    <dd>
+      Your site answers at <code>https://name.genhttp.run/</code>. A project site built for
+      <code>owner.github.io/repository/</code> still works: it is served at the root and
+      below <code>/repository/</code>.
+    </dd>
+
+    <dt>How long it stays online</dt>
+    <dd>
+      A free lambda stays online as long as it is used. One that nobody visits and nobody
+      deploys to for a month goes offline, and is removed two months after that. The
+      premium tier keeps it online.
+    </dd>
+
+    <dt>Size</dt>
+    <dd>
+      A free lambda holds 32 MB per deployment, against GitHub's 1 GB. The action says so
+      before it uploads, and how large the site is.
+    </dd>
+
+    <dt>Your own domain</dt>
+    <dd>
+      Comes with the premium tier, set in the lambda's editor. A <code>CNAME</code> file is
+      published like any other file.
+    </dd>
+
+    <dt>Permissions</dt>
+    <dd>
+      None needed: <code>pages: write</code>, <code>id-token: write</code> and the
+      <code>github-pages</code> environment do no harm and can stay.
+    </dd>
+
+    <dt>History</dt>
+    <dd>
+      Every deployment is a version you can read, compare and put back online in the
+      lambda's editor.
+    </dd>
+  </dl>
+</section>
+
+</main>
+
+<footer class="foot">
+  <p>
+    <a href="https://github.com/Kaliumhexacyanoferrat/genhttp-pages">Source on GitHub</a>, MIT licensed.
+    This page is published with GenHTTP Pages.
+  </p>
+  <p class="made"><a href="https://genhttp.dev/build" target="_blank" rel="noopener nofollow">Created with GenHTTP Lambda</a></p>
+</footer>
+
+</body>
+</html>
