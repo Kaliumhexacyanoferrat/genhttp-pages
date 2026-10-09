@@ -1,3 +1,32 @@
+/* Schibsted Grotesk and Martian Mono (SIL Open Font License), latin, served
+   from here rather than from Google: no request to a third party before the
+   page can be drawn, and no visitor's address handed to one */
+
+@font-face {
+  font-family: "Schibsted Grotesk";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("fonts/schibsted-grotesk.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Schibsted Grotesk";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/schibsted-grotesk-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Martian Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-stretch: 87.5%;
+  font-display: swap;
+  src: url("fonts/martian-mono.woff2") format("woff2");
+}
+
 :root {
   --paper: #F2F6F8;
   --sheet: #FFFFFF;
@@ -59,6 +88,7 @@ a:hover { text-decoration-thickness: 2px; }
 :focus-visible { outline: 3px solid var(--action); outline-offset: 2px; border-radius: 4px; }
 
 code, pre, textarea.code-input { font-family: var(--mono); font-size: 0.82em; }
+pre code { font-size: inherit; }
 
 p code, li code, td code, dd code, h3 code {
   background: var(--code-bg);
@@ -137,7 +167,7 @@ h3 { font-size: 1.2rem; font-weight: 700; margin: 2rem 0 0.5rem; }
 .diff code {
   display: block;
   white-space: normal; /* the newlines between the lines are not lines */
-  font-size: clamp(0.74rem, 1.55vw, 1.05rem);
+  font-size: clamp(0.75rem, 1.55vw, 1.05rem);
   line-height: 1.75;
   min-width: max-content;
 }
@@ -396,7 +426,7 @@ details.more[open] summary { margin-bottom: 0.5rem; }
 .module-group p.for { display: block; margin-top: 0.4rem; font-size: 0.85rem; color: var(--muted); }
 
 .module-group .shell { max-width: none; padding: 0.35rem 0.35rem 0.35rem 0.6rem; }
-.module-group .shell code { font-size: 0.72rem; padding: 0.3rem 0; }
+.module-group .shell code { font-size: 0.75rem; padding: 0.3rem 0; }
 .module-group .shell .copy { padding: 0.35rem 0.55rem; font-size: 0.8rem; }
 
 /* the reference page */
