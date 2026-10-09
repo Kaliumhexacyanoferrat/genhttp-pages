@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# every end-to-end job publishes into the same test lambda: one run at a time,
+# and within a run the jobs follow one another
+concurrency:
+  group: e2e
+  cancel-in-progress: false
+
 jobs:
   unit:
     name: Unit tests
@@ -47,7 +53,6 @@ jobs:
     name: Deploy the Pages artifact
     needs: [unit, compile, build]
     runs-on: ubuntu-latest
-    concurrency: e2e
     steps:
       - uses: actions/checkout@v7
       - id: deployment
@@ -60,7 +65,6 @@ jobs:
     name: Deploy a branch with Jekyll
     needs: artifact
     runs-on: ubuntu-latest
-    concurrency: e2e
     steps:
       - uses: actions/checkout@v7
       - id: deployment
@@ -75,7 +79,6 @@ jobs:
     name: Deploy a folder, again unchanged
     needs: branch
     runs-on: ubuntu-latest
-    concurrency: e2e
     steps:
       - uses: actions/checkout@v7
       - uses: ./
@@ -96,7 +99,6 @@ jobs:
     name: Deploy without a secret, by the run's OIDC token
     needs: path
     runs-on: ubuntu-latest
-    concurrency: e2e
     permissions:
       contents: read
       id-token: write
@@ -115,6 +117,24 @@ jobs:
       - run: |
           test "${{ steps.pages.outputs.base_url }}/" = "${{ steps.deployment.outputs.page_url }}"
           node test/e2e.mjs "${{ steps.deployment.outputs.page_url }}" site
+
+  kept:
+    name: A push keeps what was added in the editor
+    needs: activation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # an API beside the site, saved as an agent in the editor would
+      - run: node test/kept.mjs prepare "$KEY"
+        env:
+          KEY: ${{ secrets.GENHTTP_TEST_KEY }}
+      - id: deployment
+        uses: ./
+        with:
+          key: ${{ secrets.GENHTTP_TEST_KEY }}
+          path: test/fixtures/site
+          include_hidden_files: true
+      - run: node test/kept.mjs check "${{ steps.deployment.outputs.page_url }}"
 
   missing-key:
     name: Without a key, and without id-token, it says what to do
@@ -153,10 +173,9 @@ jobs:
 
   published:
     name: The published v1, as other repositories use it
-    needs: path
+    needs: kept
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    concurrency: e2e
     steps:
       - uses: actions/checkout@v7
       - id: pages

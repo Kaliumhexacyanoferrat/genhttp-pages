@@ -25,9 +25,10 @@ The same files, served the same way, plus an editor for the site:
 - **Traffic statistics** counted on the server - no script, no cookie.
 - **A request log** with what failed, what your code printed and its errors.
 - **Every deployment a version**, one click to put an older one back.
-- **Code on the server** when the site needs it: a form, an API, a proxy that
-  keeps a key from the browser, a SQLite database, websockets
-  ([`backend`](#a-backend-beside-the-site)).
+- **An API by asking for it**: a form that stores what it is sent, a proxy
+  that keeps a key from the browser, a database, websockets - the editor's
+  agent, or yours through MCP, writes it beside the site, and pushes keep it
+  ([more](#a-backend-beside-the-site)).
 - **Previews** of pull requests (`preview: true`).
 
 GitHub is ahead on size (1 GB against 32 MB on the free tier), on free custom
@@ -184,6 +185,42 @@ As GitHub Pages serves it:
 
 ## A backend beside the site
 
+A lambda runs code beside the site, on the same address, so the pages call it
+with `fetch('api/…')`: a form that stores what it is sent, a counter, a proxy
+that keeps an API key from the browser, something live.
+
+**Ask for it.** GenHTTP Lambda is built to be changed by agents. In the
+lambda's editor, under **Change**, say what you need - *"Add an API at
+api/signups that stores the e-mail addresses my newsletter form posts"* - and
+its agent writes the routes, switches on a database if they need one, tries
+them in a draft and puts them online. Or use your own agent through MCP and
+give it the editor link:
+
+```bash
+claude mcp add --transport http genhttp https://genhttp.dev/mcp
+```
+
+**A push keeps it.** The action replaces what the site owns -
+`resources/site/`, `resources/blobs/`, `resources/pages.json`,
+`pages/PagesSite.cs` and `docs/pages.md` - and keeps everything else of the
+newest version: the routes, `resources/migrations/`, the documentation. The
+database is never touched by a deployment. `docs/pages.md` tells the next agent
+which files come from GitHub. Routes go in front of the site in `lambda.cs`; a
+`lambda.cs` without `PagesSite.Create()` is replaced by the next push:
+
+```csharp
+return Layout.Create()
+             .Add("api", api)
+             .Add(PagesSite.Create());
+```
+
+A form or a button that uses the API belongs to the site, so it is changed in
+the repository.
+
+**Or keep it in the repository**, with `backend`: its `lambda.cs` replaces the
+lambda's, its other files go to `backend/`, its `resources/` (migrations, say)
+become the lambda's - all replaced on every push.
+
 ```yaml
       - uses: Kaliumhexacyanoferrat/genhttp-pages@v1
         with:
@@ -191,20 +228,9 @@ As GitHub Pages serves it:
           backend: backend
 ```
 
-```csharp
-// backend/lambda.cs - replaces the default "return PagesSite.Create();"
-var api = Inline.Create()
-                .Get("hello", (string name) => $"Hello, {name}!");
-
-return Layout.Create()
-             .Add("api", api)
-             .Add(PagesSite.Create());
-```
-
-The other files of the folder are compiled beside it. [`website-backend/`](website-backend)
-is a real one: it creates the lambdas on [pages.genhttp.run](https://pages.genhttp.run/).
-What a lambda can do - secrets, a database, websockets - is in the
-[GenHTTP Lambda guide](https://genhttp.dev/docs).
+[`website-backend/`](website-backend) is a real one: it activates repositories
+for [pages.genhttp.run](https://pages.genhttp.run/). What a lambda can do -
+secrets, a database, websockets - is in the [GenHTTP Lambda guide](https://genhttp.dev/docs).
 
 ## What is different from GitHub Pages
 
@@ -232,7 +258,8 @@ A composite action. It fetches the site (`actions/download-artifact`, or
    their name (spaces, accents, no extension, deeply nested, names differing
    only by case), in `resources/blobs/` under their hash - and
    `resources/pages.json` mapping every path to its file;
-4. compares it with the newest version, and if nothing changed stops there;
+4. reads the newest version, swaps what the site owns and keeps the rest - what
+   an agent or a person added in the editor - and if that changes nothing, stops there;
 5. uploads it as a zip and puts it online in one call
    (`POST /api/v1/lambdas/{key}/versions/zip?deploy=true`).
 

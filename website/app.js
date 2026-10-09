@@ -59,6 +59,7 @@ function scheme() {
 }
 
 $('tour-full').href = `editor/overview-${scheme()}.webp`;
+$('change-full').href = `editor/change-${scheme()}.webp`;
 
 // the pictures of the other tabs, so switching does not wait for them
 addEventListener('load', () => {

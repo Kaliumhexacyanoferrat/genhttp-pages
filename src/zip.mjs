@@ -4,7 +4,7 @@
 // (pictures and fonts are compressed already). Names are flagged as UTF-8.
 // No zip64: a lambda's version is far below the four gigabytes it is for.
 
-import { deflateRawSync } from 'node:zlib';
+import { deflateRawSync, inflateRawSync } from 'node:zlib';
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
@@ -111,4 +111,67 @@ export function zip(entries) {
   end.writeUInt16LE(0, 20);
 
   return Buffer.concat([...chunks, ...central, end]);
+}
+
+/**
+ * Reads the files of a zip archive through its central directory: stored or
+ * deflated entries, as GenHTTP Lambda packs a version. Folders are skipped.
+ * @param {Buffer} archive
+ * @returns {{ name: string, data: Buffer }[]}
+ */
+export function unzip(archive) {
+  const signature = Buffer.from([0x50, 0x4b, 0x05, 0x06]);
+  const end = archive.lastIndexOf(signature);
+
+  if (end < 0) {
+    throw new Error('The archive the lambda answered with is not a zip.');
+  }
+
+  const count = archive.readUInt16LE(end + 10);
+  let at = archive.readUInt32LE(end + 16);
+
+  const files = [];
+
+  for (let i = 0; i < count; i++) {
+    if (archive.readUInt32LE(at) !== 0x02014b50) {
+      throw new Error('The archive the lambda answered with is damaged.');
+    }
+
+    const flags = archive.readUInt16LE(at + 8);
+    const method = archive.readUInt16LE(at + 10);
+    const crc = archive.readUInt32LE(at + 16);
+    const packed = archive.readUInt32LE(at + 20);
+    const nameLength = archive.readUInt16LE(at + 28);
+    const extraLength = archive.readUInt16LE(at + 30);
+    const commentLength = archive.readUInt16LE(at + 32);
+    const offset = archive.readUInt32LE(at + 42);
+    const name = archive.subarray(at + 46, at + 46 + nameLength).toString(flags & 0x0800 ? 'utf8' : 'latin1');
+
+    at += 46 + nameLength + extraLength + commentLength;
+
+    if (name.endsWith('/')) {
+      continue;
+    }
+
+    const start = offset + 30 + archive.readUInt16LE(offset + 26) + archive.readUInt16LE(offset + 28);
+    const body = archive.subarray(start, start + packed);
+
+    let data;
+
+    if (method === 0) {
+      data = Buffer.from(body);
+    } else if (method === 8) {
+      data = inflateRawSync(body);
+    } else {
+      throw new Error(`'${name}' is packed in a way this action does not read (method ${method}).`);
+    }
+
+    if (crc32(data) !== crc) {
+      throw new Error(`'${name}' arrived damaged.`);
+    }
+
+    files.push({ name, data });
+  }
+
+  return files;
 }

@@ -350,6 +350,10 @@ details.more[open] summary { margin-bottom: 0.5rem; }
 
 .diff span.code-slot { display: inline; padding: 0; position: static; }
 
+.backend .lede { max-width: 44rem; }
+.change-shot { margin: 1.25rem 0 1rem; max-width: min(100%, calc((100svh - 12rem) * 2.065)); }
+.backend .shell { max-width: 44rem; }
+
 /* the reference page */
 
 .doc h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 1.5rem 0 1rem; max-width: none; }

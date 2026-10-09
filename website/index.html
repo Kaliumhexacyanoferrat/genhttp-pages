@@ -27,6 +27,7 @@
   <a class="brand" href="./">GenHTTP Pages</a>
   <nav>
     <a href="#setup">Activate</a>
+    <a href="#backend">API</a>
     <a href="reference">Reference</a>
     <a href="https://github.com/Kaliumhexacyanoferrat/genhttp-pages">GitHub</a>
   </nav>
@@ -70,7 +71,7 @@
     <button type="button" role="tab" id="tour-versions" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="versions"
             data-say="Each push is a version with the commit it came from. Put an older one back online in one click.">History</button>
     <button type="button" role="tab" id="tour-data" aria-controls="tour-panel" aria-selected="false" tabindex="-1" data-shot="data"
-            data-say="Need a form, an API or something live? Add C# beside the site, with a database and secrets. Shown: the demo-crud demo.">Backend</button>
+            data-say="Code beside the site, with a database and secrets, written by an agent when you ask for it. Shown: the sign-ups an API like that keeps.">Backend</button>
   </div>
 
   <div id="tour-panel" role="tabpanel" aria-labelledby="tour-overview" class="tour-panel">
@@ -198,6 +199,32 @@
       </p>
     </li>
   </ol>
+</section>
+
+<section id="backend" class="backend">
+  <h2>Need an API? Ask for it.</h2>
+  <p class="lede">
+    Say what your site should be able to do in the editor's Change section. The
+    platform's agent writes the code beside your site and tries it in a draft before
+    it goes online. Your pages call it with <code>fetch('api/…')</code>, and your next
+    push keeps it.
+  </p>
+
+  <a id="change-full" class="tour-shot change-shot" href="editor/change-light.webp" target="_blank" rel="noopener" aria-label="Open the picture in full size">
+    <picture>
+      <source srcset="editor/change-dark.webp" media="(prefers-color-scheme: dark)">
+      <img src="editor/change-light.webp" width="1280" height="620" loading="lazy"
+           alt="The Change section of a site's editor: asked to add an API for the sign-ups of a newsletter form, the agent wrote it, tried it and put it online.">
+    </picture>
+  </a>
+
+  <p class="small">
+    Prefer your own agent? Connect it to GenHTTP Lambda and hand it your editor link:
+  </p>
+  <div class="shell">
+    <code id="mcp-command">claude mcp add --transport http genhttp https://genhttp.dev/mcp</code>
+    <button type="button" class="copy" data-copy="mcp-command">Copy</button>
+  </div>
 </section>
 
 </main>

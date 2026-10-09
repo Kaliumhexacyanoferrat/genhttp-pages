@@ -27,7 +27,7 @@ export class LambdaApi {
     return `/lambdas/${encodeURIComponent(this.key)}${path}`;
   }
 
-  async request(method, path, { json, body, contentType, query, what, attempts = 3 } = {}) {
+  async request(method, path, { json, body, contentType, query, what, attempts = 3, binary = false } = {}) {
     const url = new URL(this.base + path);
 
     for (const [name, value] of Object.entries(query ?? {})) {
@@ -36,7 +36,7 @@ export class LambdaApi {
       }
     }
 
-    const headers = { 'User-Agent': this.userAgent, Accept: 'application/json' };
+    const headers = { 'User-Agent': this.userAgent, Accept: binary ? 'application/zip' : 'application/json' };
 
     if (json !== undefined) {
       headers['Content-Type'] = 'application/json';
@@ -64,6 +64,10 @@ export class LambdaApi {
       if (RETRIED.has(response.status) && attempt < attempts) {
         await sleep(attempt * 3000);
         continue;
+      }
+
+      if (binary && response.ok) {
+        return { status: response.status, body: Buffer.from(await response.arrayBuffer()) };
       }
 
       const text = await response.text();
@@ -103,6 +107,15 @@ export class LambdaApi {
   /** The files of a version below a folder (or the one file of that name). */
   async getVersionFiles(version, folder) {
     return (await this.request('GET', this.lambda(`/versions/${version}`), { query: { folder }, what: 'read a version' })).body?.files ?? [];
+  }
+
+  /** A version's files as a zip, named as the lambda names them. */
+  async getVersionZip(version) {
+    return (await this.request('GET', this.lambda(`/versions/${version}/zip`), { binary: true, what: 'read the newest version' })).body;
+  }
+
+  async getFeatureZip(feature) {
+    return (await this.request('GET', this.lambda(`/features/${encodeURIComponent(feature)}/zip`), { binary: true, what: 'read the preview' })).body;
   }
 
   async saveVersion(zip, { deploy, change, specification }) {

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 
-import { isResourceName, place, basePaths, build, collect, MANIFEST } from '../src/site.mjs';
+import { isResourceName, place, basePaths, siteFiles, merge, same, collect, MANIFEST } from '../src/site.mjs';
 
 const file = (path, text = path) => ({ path, data: Buffer.from(text) });
 
@@ -60,34 +60,94 @@ test('a project page is also served below the name of its repository', () => {
   assert.deepEqual(basePaths('/a/, b', 'octo/docs', false), ['/a', '/b']);
 });
 
-test('the version starts with lambda.cs and holds the manifest', () => {
-  const version = build({
-    site: [file('index.html')],
-    program: [{ name: 'pages/PagesSite.cs', data: Buffer.from('//') }, { name: 'lambda.cs', data: Buffer.from('return PagesSite.Create();') }],
-    basePaths: ['/repo'],
-    product: '# x'
-  });
 
-  assert.equal(version.files[0].name, 'lambda.cs');
+test('the fixture site is collected without hidden files unless asked', () => {
+  const root = fileURLToPath(new URL('./fixtures/site', import.meta.url));
 
-  const manifest = JSON.parse(version.files.find(f => f.name === MANIFEST).data);
+  assert.ok(!collect(root).some(f => f.path.startsWith('.well-known/')));
+  assert.ok(collect(root, { hidden: true }).some(f => f.path === '.well-known/security.txt'));
+});test('the site owns the manifest and its files, and nothing in them names the commit', () => {
+  const { files } = siteFiles({ site: [file('index.html')], basePaths: ['/repo'], repository: 'octo/docs' });
 
-  assert.equal(manifest.digest, version.digest);
+  const manifest = JSON.parse(files.find(f => f.name === MANIFEST).data);
+
   assert.deepEqual(manifest.basePaths, ['/repo']);
   assert.equal(manifest.files['index.html'][0], 'site/index.html');
-  assert.ok(version.files.some(f => f.name === 'resources/site/index.html'));
+  assert.ok(files.some(f => f.name === 'resources/site/index.html'));
+
+  // the same site makes the same files
+  const again = siteFiles({ site: [file('index.html')], basePaths: ['/repo'], repository: 'octo/docs' }).files;
+  assert.ok(same(files, again));
 });
 
-test('the digest ignores where the site came from, not what it is', () => {
-  const make = (commit, text) => build({
-    site: [file('index.html', text)],
-    program: [{ name: 'lambda.cs', data: Buffer.from('x') }],
-    source: { commit },
-    product: commit
-  }).digest;
+const named = (name, text) => ({ name, data: Buffer.from(text) });
 
-  assert.equal(make('a', 'same'), make('b', 'same'));
-  assert.notEqual(make('a', 'one'), make('a', 'two'));
+const push = (siteText = 'site', extra = {}) => ({
+  site: siteFiles({ site: [file('index.html', siteText)], repository: 'octo/docs' }).files,
+  handler: named('pages/PagesSite.cs', '// handler'),
+  entry: named('lambda.cs', 'return PagesSite.Create();'),
+  notes: named('docs/pages.md', '# notes'),
+  product: named('docs/product.md', '# product'),
+  ...extra
+});
+
+test('a push swaps the site and keeps what an agent added', () => {
+  const existing = [
+    named('lambda.cs', 'return Layout.Create().Add("api", Signups.Api()).Add(PagesSite.Create());'),
+    named('Signups.cs', 'class Signups {}'),
+    named('resources/migrations/V1__Create_signups.sql', 'CREATE TABLE signups (email TEXT);'),
+    named('docs/product.md', '# written by the agent'),
+    named('pages/PagesSite.cs', '// old handler'),
+    named(MANIFEST, '{}'),
+    named('resources/site/old.html', 'gone')
+  ];
+
+  const { files, entryReplaced } = merge(existing, push());
+  const byName = new Map(files.map(f => [f.name, f.data.toString()]));
+
+  assert.equal(files[0].name, 'lambda.cs');
+  assert.match(byName.get('lambda.cs'), /Signups/);
+  assert.equal(entryReplaced, false);
+  assert.ok(byName.has('Signups.cs'));
+  assert.ok(byName.has('resources/migrations/V1__Create_signups.sql'));
+  assert.equal(byName.get('docs/product.md'), '# written by the agent');
+  assert.equal(byName.get('pages/PagesSite.cs'), '// handler');
+  assert.ok(byName.has('resources/site/index.html'));
+  assert.ok(!byName.has('resources/site/old.html'));
+});
+
+test('a lambda.cs that does not serve the site is replaced', () => {
+  const { files, entryReplaced } = merge([named('lambda.cs', 'return Inline.Create().Get(() => "Hello");')], push());
+
+  assert.equal(files[0].data.toString(), 'return PagesSite.Create();');
+  assert.equal(entryReplaced, true);
+  assert.ok(files.some(f => f.name === 'docs/product.md'));
+});
+
+test('a backend from the repository owns lambda.cs and backend/', () => {
+  const existing = [
+    named('lambda.cs', 'return Layout.Create().Add(PagesSite.Create());'),
+    named('backend/Old.cs', 'class Old {}'),
+    named('Agent.cs', 'class Agent {}')
+  ];
+
+  const backend = { entry: named('lambda.cs', 'return Layout.Create().Add("api", Api.Create()).Add(PagesSite.Create());'), files: [named('backend/Api.cs', 'class Api {}')] };
+
+  const names = merge(existing, push('site', { backend })).files.map(f => f.name);
+
+  assert.ok(names.includes('backend/Api.cs'));
+  assert.ok(!names.includes('backend/Old.cs'));
+  assert.ok(names.includes('Agent.cs'));
+});
+
+test('the same site pushed onto what it made changes nothing', () => {
+  const first = merge([named('lambda.cs', 'return Inline.Create();')], push()).files;
+
+  // as the lambda hands the version back: copies, in another order
+  const stored = first.map(f => ({ name: f.name, data: Buffer.from(f.data) })).reverse();
+
+  assert.ok(same(stored, merge(stored, push()).files));
+  assert.ok(!same(stored, merge(stored, push('changed')).files));
 });
 
 test('the fixture site is collected without hidden files unless asked', () => {

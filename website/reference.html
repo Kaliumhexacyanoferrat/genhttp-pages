@@ -134,24 +134,56 @@
     <li>Names with spaces, accents, no extension or many folders work as they do on GitHub.</li>
   </ul>
 
-  <h3 id="backend">A backend beside the site</h3>
+  <h2 id="backend">A backend beside the site</h2>
   <p>
-    A static site sometimes needs one endpoint: a form, a counter, a proxy to an API with a
-    key. Put C# into a folder and name it in <code>backend</code>. Its <code>lambda.cs</code>
-    puts routes in front of the site, and the site still answers everything else:
+    A static site sometimes needs code on the server: a form that stores what it is sent,
+    a counter, a proxy that keeps an API key from the browser, something live. A lambda
+    runs it beside the site, on the same address, so the pages call it with
+    <code>fetch('api/…')</code>.
   </p>
-<pre class="block"><code>// backend/lambda.cs
-var api = Inline.Create()
-                .Get("hello", (string name) =&gt; $"Hello, {name}!");
 
-return Layout.Create()
+  <h3>Ask for it</h3>
+  <p>
+    GenHTTP Lambda is built to be changed by agents. Open the lambda's editor, go to
+    <strong>Change</strong> and say what you need: <em>"Add an API at api/signups that
+    stores the e-mail addresses my newsletter form posts."</em> Its agent writes the routes,
+    switches on a database if they need one, tries them in a draft and puts them online.
+  </p>
+  <p>
+    Or use your own agent - Claude Code, Codex, Cursor - through MCP, and give it the
+    editor link:
+  </p>
+<pre class="block"><code>claude mcp add --transport http genhttp https://genhttp.dev/mcp</code></pre>
+
+  <h3>Why a push keeps it</h3>
+  <p>
+    A push replaces the site and nothing else: <code>resources/site/</code>,
+    <code>resources/blobs/</code>, <code>resources/pages.json</code>,
+    <code>pages/PagesSite.cs</code> and <code>docs/pages.md</code>. Everything else - the
+    routes, <code>resources/migrations/</code>, the documentation - stays as the agent or you
+    left it, and the database is never touched by a deployment. <code>docs/pages.md</code>
+    says so to the next agent that reads the lambda.
+  </p>
+  <p>
+    The routes go in front of the site in <code>lambda.cs</code>, which keeps serving the
+    site last. A <code>lambda.cs</code> without <code>PagesSite.Create()</code> is replaced by
+    the next push.
+  </p>
+<pre class="block"><code>return Layout.Create()
              .Add("api", api)
              .Add(PagesSite.Create());</code></pre>
   <p>
-    The other files of the folder are compiled beside it, and its <code>resources/</code> -
-    the migrations of a database, say - become the lambda's. Switch the database and
-    secrets on in the lambda's editor; the <a href="https://genhttp.dev/docs" target="_blank" rel="noopener">GenHTTP Lambda guide</a>
-    says how to use them.
+    A form or a button that uses the API belongs to the site, so it is changed in the
+    repository; what the agent changes in <code>resources/site/</code> is gone with the next
+    push.
+  </p>
+
+  <h3>Or keep it in the repository</h3>
+  <p>
+    To have the C# in the repository instead, name its folder in <code>backend</code>: its
+    <code>lambda.cs</code> replaces the lambda's, the other files go to <code>backend/</code>,
+    and its <code>resources/</code> - migrations, say - become the lambda's, all replaced on
+    every push.
   </p>
   <p class="small">
     This site does it: <a href="https://github.com/Kaliumhexacyanoferrat/genhttp-pages/tree/main/website-backend">its backend</a>

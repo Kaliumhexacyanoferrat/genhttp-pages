@@ -2,8 +2,13 @@
 //
 // The composite action (action.yml) fetches the site - the Pages artifact of
 // the run, a folder, or a branch built with Jekyll - and hands it to this
-// script, which packs it as a lambda version and puts it online through the
-// REST API of GenHTTP Lambda.
+// script, which puts it into the lambda through the REST API of GenHTTP
+// Lambda.
+//
+// A push replaces the site and nothing else. The lambda is also changed in its
+// editor, by its agent or by the owner's agent through MCP - an API beside the
+// site, a database - and that stays: the newest version is read, the files the
+// site owns are swapped, and the rest is saved with them as the next version.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
@@ -13,8 +18,8 @@ import { fileURLToPath } from 'node:url';
 
 import * as gha from './gha.mjs';
 import { LambdaApi, ApiError } from './api.mjs';
-import { collect, build, basePaths, MANIFEST } from './site.mjs';
-import { zip } from './zip.mjs';
+import { collect, siteFiles, merge, same, basePaths } from './site.mjs';
+import { zip, unzip } from './zip.mjs';
 import { resolveKey, KeyMissing } from './credentials.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -56,7 +61,7 @@ async function main() {
   }
 
   if (lambda.tier === 'Demo') {
-    throw new Error(`'${lambda.publicKey}' is a demo, which nobody can deploy to. Create a lambda of your own at ${ASSISTANT}.`);
+    throw new Error(`'${lambda.publicKey}' is a demo, which nobody can deploy to. Activate the repository at ${ASSISTANT}#setup.`);
   }
 
   gha.log(`Publishing to the lambda '${lambda.publicKey}' (${lambda.tier} tier) on ${server}.`);
@@ -69,10 +74,6 @@ async function main() {
     throw new Error(`There are no files to publish in '${folder}'.`);
   }
 
-  // the program around it
-  const program = programFiles();
-  const backend = backendFiles();
-
   const repository = env.GITHUB_REPOSITORY ?? '';
   const commit = env.GITHUB_SHA ?? '';
   const githubServer = env.GITHUB_SERVER_URL ?? 'https://github.com';
@@ -80,16 +81,7 @@ async function main() {
 
   const bases = basePaths(gha.input('base_path', 'auto'), repository, site.some(f => f.path === 'CNAME'));
 
-  const version = build({
-    site,
-    program: backend.entry ? program.filter(f => f.name !== 'lambda.cs').concat(backend.entry) : program,
-    backend: backend.files,
-    basePaths: bases,
-    source: { generator: `genhttp-pages@${VERSION}`, repository, commit, run: runUrl },
-    product: product({ repository, commit, githubServer, runUrl, backend: backend.files.length > 0 || !!backend.entry })
-  });
-
-  const { stats } = version;
+  const { files: served, stats } = siteFiles({ site, basePaths: bases, repository });
 
   gha.log(`The site has ${stats.pages} files (${size(stats.siteBytes)}); ${stats.mapped} of them are stored under another name, since a lambda cannot hold theirs.`);
 
@@ -97,26 +89,46 @@ async function main() {
     gha.log(`It is also served below ${bases.join(', ')}, where GitHub Pages would have served it.`);
   }
 
-  await checkSize(api, lambda, stats.bytes);
+  const backend = backendFiles();
 
-  const archive = zip(version.files.map(f => ({ name: f.name, data: f.data })));
+  const push = {
+    site: served,
+    handler: { name: 'pages/PagesSite.cs', data: readFileSync(join(ACTION, 'lambda', 'PagesSite.cs')) },
+    entry: { name: 'lambda.cs', data: readFileSync(join(ACTION, 'lambda', 'lambda.cs')) },
+    notes: { name: 'docs/pages.md', data: Buffer.from(notes({ repository, githubServer, backend: gha.input('backend') }), 'utf8') },
+    product: { name: 'docs/product.md', data: Buffer.from(product({ repository, githubServer }), 'utf8') },
+    backend
+  };
 
   const shortSha = commit.slice(0, 7);
   const change = repository ? `Published ${repository}${shortSha ? '@' + shortSha : ''} with GenHTTP Pages` : 'Published with GenHTTP Pages';
   const specification = [
-    'Deployed by the GenHTTP Pages GitHub Action. The next deployment replaces every file, so change the site in its repository rather than here.',
+    'Published by the GenHTTP Pages GitHub Action: the site was replaced, everything else kept (docs/pages.md).',
     repository && `Repository: ${githubServer}/${repository}`,
     commit && `Commit: ${commit}`,
     runUrl && `Run: ${runUrl}`
   ].filter(Boolean).join('\n');
 
   if (gha.flag('preview')) {
-    await publishPreview(api, lambda, archive, { change, specification, server });
+    await publishPreview(api, lambda, push, { change, specification, server });
     return;
   }
 
-  // the same site as the newest version, which is online: nothing to do
-  const unchanged = await sameAsNewest(api, lambda, version.digest);
+  // what the lambda is now - the agent's routes, the owner's migrations - with the site swapped
+  const existing = lambda.latestVersion ? unzip(await api.getVersionZip(lambda.latestVersion)) : [];
+  const { files, entryReplaced, kept } = merge(existing, push);
+
+  if (kept.length > 0) {
+    gha.log(`Kept from the lambda: ${kept.slice(0, 8).join(', ')}${kept.length > 8 ? ` and ${kept.length - 8} more` : ''}.`);
+  }
+
+  if (entryReplaced) {
+    gha.log('lambda.cs did not serve the site yet; it does now.');
+  }
+
+  await checkSize(api, lambda, files.reduce((sum, f) => sum + f.data.length, 0));
+
+  const unchanged = same(existing, files);
 
   let deployedVersion;
   let address;
@@ -134,7 +146,9 @@ async function main() {
       address = outcome.lambda?.address ?? lambda.address;
     }
   } else {
-    gha.log(`Uploading ${version.files.length} files (${size(archive.length)} packed).`);
+    const archive = zip(files);
+
+    gha.log(`Uploading ${files.length} files (${size(archive.length)} packed).`);
 
     const saved = await api.saveVersion(archive, { deploy: true, change, specification });
 
@@ -201,18 +215,9 @@ function locateSite() {
 }
 
 /**
- * The program every site gets: lambda.cs and the handler.
- */
-function programFiles() {
-  return [
-    { name: 'lambda.cs', data: readFileSync(join(ACTION, 'lambda', 'lambda.cs')) },
-    { name: 'pages/PagesSite.cs', data: readFileSync(join(ACTION, 'lambda', 'PagesSite.cs')) }
-  ];
-}
-
-/**
- * C# of the site's own, from the 'backend' input: its lambda.cs replaces the
- * one that only serves the site, and the rest go to backend/.
+ * C# of the repository's own, from the 'backend' input: its lambda.cs
+ * replaces the lambda's, its resources/ join the lambda's, and the rest is
+ * backend/ - all owned by the repository from then on.
  */
 function backendFiles() {
   const folder = gha.input('backend');
@@ -245,50 +250,57 @@ function backendFiles() {
   return { entry, files };
 }
 
-function product({ repository, commit, githubServer, runUrl, backend }) {
-  const lines = [
-    `# ${repository ? repository.split('/')[1] : 'A static site'} on GenHTTP Pages`,
-    '',
-    `The static site of ${repository ? `[${repository}](${githubServer}/${repository})` : 'a repository'}, published by the [GenHTTP Pages](${ASSISTANT}) GitHub Action`
-      + `${commit ? ` from commit \`${commit.slice(0, 7)}\`` : ''}${runUrl ? ` ([run](${runUrl}))` : ''}.`,
-    '',
-    'Every deployment replaces all files of this lambda, so a change made here is gone with the next push. Change the repository instead.',
-    '',
-    '- `resources/site/` holds the site, and `resources/blobs/` the files whose names a lambda cannot hold.',
-    '- `resources/pages.json` maps every path of the site to where it is stored.',
-    '- `pages/PagesSite.cs` serves it the way GitHub Pages does.',
-    backend ? '- `lambda.cs` and `backend/` come from the repository: the routes it adds beside the site.' : '- `lambda.cs` returns the site.',
-    ''
-  ];
+/**
+ * docs/pages.md: what a push replaces and what it keeps - for whoever changes
+ * the lambda in its editor next, the agent first of all, which reads docs/.
+ */
+function notes({ repository, githubServer, backend }) {
+  const from = repository ? `[${repository}](${githubServer}/${repository})` : 'a repository';
 
-  return lines.join('\n');
+  return [
+    '# Published from GitHub',
+    '',
+    `This lambda serves the static site of ${from}, published by the [GenHTTP Pages](${ASSISTANT}) GitHub Action on every push.`,
+    '',
+    '## What a push replaces',
+    '',
+    '- `resources/site/`, `resources/blobs/` and `resources/pages.json`: the site, as the repository builds it.',
+    '- `pages/PagesSite.cs`: serves the site the way GitHub Pages does.',
+    backend ? `- \`lambda.cs\`, \`backend/\` and the resources of \`${backend}/\`: they come from the repository's \`${backend}/\` folder.` : null,
+    '- this page.',
+    '',
+    'Change these in the repository: a change made to them here is gone with the next push.',
+    '',
+    '## What stays',
+    '',
+    backend
+      ? 'Everything else: other C# files, migrations, the documentation and the tests.'
+      : 'Everything else: `lambda.cs`, routes in other C# files, migrations in `resources/migrations/`, the documentation and the tests.',
+    '',
+    'An API beside the site is a route in front of it in `lambda.cs`, which keeps serving the site last:',
+    '',
+    '```csharp',
+    'return Layout.Create()',
+    '             .Add("api", api)',
+    '             .Add(PagesSite.Create());',
+    '```',
+    '',
+    'A `lambda.cs` without `PagesSite.Create()` is replaced by the next push. The pages of the site call the API with relative paths (`fetch(\'api/...\')`); a page that needs a form or a button for it is changed in the repository.',
+    ''
+  ].filter(line => line !== null).join('\n');
 }
 
-async function sameAsNewest(api, lambda, digest) {
-  if (!lambda.latestVersion) {
-    return false;
-  }
+/** docs/product.md, for a lambda that has none: the lambda's own from then on. */
+function product({ repository, githubServer }) {
+  const name = repository ? repository.split('/')[1] : 'A static site';
+  const from = repository ? `[${repository}](${githubServer}/${repository})` : 'a repository';
 
-  try {
-    const [newest] = await api.getVersions();
-
-    // a version saved in the editor or by an agent since is not ours to keep
-    if (!newest || newest.version !== lambda.latestVersion || (newest.origin ?? '').toLowerCase() !== 'api') {
-      return false;
-    }
-
-    const [manifest] = await api.getVersionFiles(lambda.latestVersion, MANIFEST);
-
-    if (!manifest || manifest.name !== MANIFEST) {
-      return false;
-    }
-
-    const text = manifest.encoding === 'base64' ? Buffer.from(manifest.code, 'base64').toString('utf8') : manifest.code;
-
-    return JSON.parse(text).digest === digest;
-  } catch {
-    return false;
-  }
+  return [
+    `# ${name}`,
+    '',
+    `The website of ${from}, published from GitHub with GenHTTP Pages. [pages.md](pages.md) says what comes from the repository and what is kept here.`,
+    ''
+  ].join('\n');
 }
 
 async function checkSize(api, lambda, bytes) {
@@ -323,7 +335,7 @@ function ensureDeployed(outcome, version) {
   throw new Error(`Version ${version} was saved but could not be put online; what was online before stays online. See the errors above.`);
 }
 
-async function publishPreview(api, lambda, archive, { change, specification, server }) {
+async function publishPreview(api, lambda, push, { change, specification, server }) {
   if (!lambda.latestVersion) {
     throw new Error('A preview is made from the site online. Deploy without preview once first.');
   }
@@ -339,7 +351,10 @@ async function publishPreview(api, lambda, archive, { change, specification, ser
     gha.log(`Started the feature '${name}' for the preview.`);
   }
 
-  const saved = await api.saveFeature(feature.key, archive, { change, specification });
+  // the feature holds what the lambda held when it started, and what was changed in it since
+  const { files } = merge(unzip(await api.getFeatureZip(feature.key)), push);
+
+  const saved = await api.saveFeature(feature.key, zip(files), { change, specification });
 
   if (!saved.preview?.success) {
     for (const d of saved.preview?.diagnostics ?? []) {

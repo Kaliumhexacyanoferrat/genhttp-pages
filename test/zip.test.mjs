@@ -1,37 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { inflateRawSync, crc32 as nodeCrc32 } from 'node:zlib';
+import { crc32 as nodeCrc32 } from 'node:zlib';
 
-import { zip, crc32 } from '../src/zip.mjs';
+import { zip, crc32, unzip } from '../src/zip.mjs';
 
-// reads an archive back through its central directory
-function unzip(archive) {
-  const end = archive.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
-  const count = archive.readUInt16LE(end + 10);
-  let at = archive.readUInt32LE(end + 16);
-  const files = new Map();
-
-  for (let i = 0; i < count; i++) {
-    assert.equal(archive.readUInt32LE(at), 0x02014b50);
-    const method = archive.readUInt16LE(at + 10);
-    const crc = archive.readUInt32LE(at + 16);
-    const packed = archive.readUInt32LE(at + 20);
-    const nameLength = archive.readUInt16LE(at + 28);
-    const offset = archive.readUInt32LE(at + 42);
-    const name = archive.subarray(at + 46, at + 46 + nameLength).toString('utf8');
-
-    const localName = archive.readUInt16LE(offset + 26);
-    const localExtra = archive.readUInt16LE(offset + 28);
-    const body = archive.subarray(offset + 30 + localName + localExtra, offset + 30 + localName + localExtra + packed);
-    const data = method === 8 ? inflateRawSync(body) : body;
-
-    assert.equal(crc32(data), crc, name);
-    files.set(name, data);
-    at += 46 + nameLength;
-  }
-
-  return files;
-}
+const unzipped = (archive) => new Map(unzip(archive).map(f => [f.name, f.data]));
 
 test('crc32 matches the one zlib computes', { skip: !nodeCrc32 }, () => {
   for (const text of ['', 'a', 'The quick brown fox jumps over the lazy dog', 'é'.repeat(1000)]) {
@@ -47,7 +20,7 @@ test('an archive holds what was packed', () => {
     { name: 'docs/café.md', data: Buffer.alloc(0) }
   ];
 
-  const files = unzip(zip(entries));
+  const files = unzipped(zip(entries));
 
   assert.deepEqual([...files.keys()], entries.map(e => e.name));
 

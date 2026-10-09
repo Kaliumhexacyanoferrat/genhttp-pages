@@ -221,55 +221,97 @@ export function basePaths(setting, repository, hasCname) {
 }
 
 /**
- * Puts together the files of the version: the program, what is written about
- * it, and the site.
- * @returns {{ files: { name: string, data: Buffer }[], digest: string, stats: object }}
+ * The files the site owns in the lambda: what is served, and the map of it.
+ * Nothing in them depends on the commit, so the same site makes the same files.
+ * @returns {{ files: { name: string, data: Buffer }[], stats: object }}
  */
-export function build({ site, program, backend = [], basePaths: bases = [], source = {}, product }) {
+export function siteFiles({ site, basePaths: bases = [], repository }) {
   const { entries, resources, mapped } = place(site);
 
-  const manifestBody = {
+  const manifest = {
     version: 1,
-    generator: source.generator ?? 'genhttp-pages',
-    source: { repository: source.repository, commit: source.commit, run: source.run },
+    generator: 'genhttp-pages',
+    repository,
     basePaths: bases,
     files: Object.fromEntries(entries)
   };
 
-  const code = [
-    ...program,
-    ...backend,
-    { name: 'docs/product.md', data: Buffer.from(product, 'utf8') }
-  ];
-
-  // lambda.cs has to come first
-  code.sort((a, b) => (a.name === 'lambda.cs' ? -1 : b.name === 'lambda.cs' ? 1 : 0));
-
-  const served = [...resources].map(([name, data]) => ({ name: 'resources/' + name, data }));
-
-  // what identifies this deployment: every file but the manifest, and the
-  // manifest without where it came from (a new commit with the same site is
-  // the same site)
-  const hash = createHash('sha256');
-  for (const file of [...code.filter(f => f.name !== 'docs/product.md'), ...served]) {
-    hash.update(file.name).update('\0').update(sha256(file.data)).update('\0');
-  }
-  hash.update(JSON.stringify({ ...manifestBody, source: undefined, generator: undefined }));
-  const digest = hash.digest('hex');
-
-  const manifest = { digest, ...manifestBody };
-
   const files = [
-    ...code,
     { name: MANIFEST, data: Buffer.from(JSON.stringify(manifest), 'utf8') },
-    ...served
+    ...[...resources].map(([name, data]) => ({ name: 'resources/' + name, data }))
   ];
-
-  const bytes = files.reduce((sum, f) => sum + f.data.length, 0);
 
   return {
     files,
-    digest,
-    stats: { pages: entries.size, stored: resources.size, mapped, bytes, siteBytes: site.reduce((s, f) => s + f.data.length, 0) }
+    stats: { pages: entries.size, stored: resources.size, mapped, siteBytes: site.reduce((s, f) => s + f.data.length, 0) }
   };
+}
+
+/** What a push replaces in the lambda: the site, its handler, and the page saying so. */
+export const OWNED = ['resources/site/', 'resources/blobs/', MANIFEST, 'pages/PagesSite.cs', 'docs/pages.md'];
+
+const owned = (name, prefixes) => prefixes.some(p => (p.endsWith('/') ? name.startsWith(p) : name === p));
+
+/**
+ * The next version of the lambda: what it has, with what the push owns
+ * replaced - so the routes, data migrations and documentation an agent or a
+ * person added in the editor stay.
+ *
+ * @param {{ name: string, data: Buffer }[]} existing the files of its newest version
+ * @param {object} push
+ * @param {{ name: string, data: Buffer }[]} push.site what siteFiles() made
+ * @param {{ name: string, data: Buffer }} push.handler pages/PagesSite.cs
+ * @param {{ name: string, data: Buffer }} push.entry the lambda.cs that only serves the site
+ * @param {{ name: string, data: Buffer }} push.notes docs/pages.md
+ * @param {{ name: string, data: Buffer }} push.product docs/product.md, if the lambda has none
+ * @param {{ entry: object|null, files: object[] }} push.backend the 'backend' input, which owns backend/ and its files
+ * @returns {{ files: { name: string, data: Buffer }[], entryReplaced: boolean, kept: string[] }}
+ */
+export function merge(existing, { site, handler, entry, notes, product, backend = { entry: null, files: [] } }) {
+  const prefixes = [...OWNED];
+
+  if (backend.entry || backend.files.length > 0) {
+    prefixes.push('backend/', ...backend.files.map(f => f.name), ...(backend.entry ? ['lambda.cs'] : []));
+  }
+
+  // the product page versions 1.0 and 1.1 wrote, which said a push replaces every file
+  const outdated = (f) => f.name === 'docs/product.md' && f.data.toString('utf8').includes('Every deployment replaces all files of this lambda');
+
+  const kept = existing.filter(f => !owned(f.name, prefixes) && !outdated(f));
+
+  const current = kept.find(f => f.name === 'lambda.cs');
+
+  // a lambda.cs that serves the site - the default, or one with routes
+  // around PagesSite.Create() - is the lambda's; any other one never served
+  // the site, so it is replaced, unless the repository brings its own
+  let lambda = backend.entry ?? current;
+  let entryReplaced = false;
+
+  if (!backend.entry && (!current || !current.data.toString('utf8').includes('PagesSite'))) {
+    lambda = entry;
+    entryReplaced = !!current;
+  }
+
+  const files = [
+    { name: 'lambda.cs', data: lambda.data },
+    ...kept.filter(f => f.name !== 'lambda.cs'),
+    ...(kept.some(f => f.name === 'docs/product.md') ? [] : [product]),
+    handler,
+    notes,
+    ...backend.files,
+    ...site
+  ];
+
+  return { files, entryReplaced, kept: kept.map(f => f.name) };
+}
+
+/** Whether two sets of files are the same, whatever their order. */
+export function same(a, b) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  const index = new Map(a.map(f => [f.name, sha256(f.data)]));
+
+  return b.every(f => index.get(f.name) === sha256(f.data));
 }
